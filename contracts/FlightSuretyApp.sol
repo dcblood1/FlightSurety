@@ -19,12 +19,13 @@ contract FlightSuretyApp {
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
-    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20; // the only one that would pay out to insurees.
     uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
     address private contractOwner;          // Account used to deploy contract
+    FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
 
     struct Flight {
         bool isRegistered;
@@ -73,10 +74,13 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
+                                    address dataContract
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(dataContract);
+        flightSuretyData.registerAirline(msg.sender);
     }
 
     /********************************************************************************************/
@@ -91,6 +95,8 @@ contract FlightSuretyApp {
         return true;  // Modify to call data contract's status
     }
 
+
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -102,11 +108,14 @@ contract FlightSuretyApp {
     */   
     function registerAirline
                             (   
+                                address account
                             )
                             external
-                            pure
-                            returns(bool success, uint256 votes)
+                            returns(bool success, uint256 votes) //idk what this votes is... maybe for something else
     {
+        require(!airlines[account].isRegistered, "Airline is already registered.");
+        
+
         return (success, 0);
     }
 
@@ -126,7 +135,7 @@ contract FlightSuretyApp {
     
    /**
     * @dev Called after oracle has updated flight status
-    *
+    * very important, has to process what happens after a flight status returns. -> only event 20, 
     */  
     function processFlightStatus
                                 (

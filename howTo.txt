@@ -1,0 +1,2 @@
+ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" --gasLimit 99999999 --gasPrice 20000000000 -a 50
+//for cli

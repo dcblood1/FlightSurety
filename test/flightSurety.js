@@ -10,9 +10,29 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
   });
 
+
+
+
   /****************************************************************************************/
   /* Operations and Settings                                                              */
   /****************************************************************************************/
+
+    ///////////////////////////////////// try to register new airline... one should go with contract out the door.
+    it('contract owner can register new airline', async () => {
+    
+        // ARRANGE
+        let caller = accounts[0]; // This should be config.owner or accounts[0] for registering a new user
+        let newAirline = config.testAddresses[0]; 
+    
+        // ACT
+        await config.exerciseC6A.registerUser(newUser, false, {from: caller});
+        let result = await config.exerciseC6A.isUserRegistered.call(newUser); 
+    
+        // ASSERT
+        assert.equal(result, true, "Contract owner cannot register new user");
+     
+    
+    });
 
   it(`(multiparty) has correct initial isOperational() value`, async function () {
 
@@ -89,6 +109,6 @@ contract('Flight Surety Tests', async (accounts) => {
     assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
 
   });
- 
+
 
 });

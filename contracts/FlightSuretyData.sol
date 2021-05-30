@@ -12,6 +12,15 @@ contract FlightSuretyData {
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
+
+    struct Airline {
+        bool isRegistered;        
+        bool hasPaid; // confirm they gave 10 ether to participate
+    }
+
+    mapping(address => Airline) private airlines; // mapping of address to airline profiles
+
+
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
@@ -27,6 +36,13 @@ contract FlightSuretyData {
                                 public 
     {
         contractOwner = msg.sender;
+        ///TODO: need to register an airline right out the door, and confirm it has paid?
+        //register first airline at contract creation
+        airlines[msg.sender] = Airline({
+                                        isRegistered: true,
+                                        hasPaid: true
+                                    });
+
     }
 
     /********************************************************************************************/
@@ -60,6 +76,25 @@ contract FlightSuretyData {
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
+   /**
+    * @dev Check if an airline is registered and has paid
+    *
+    * @return A bool that indicates if the user is registered
+    */   
+    function isAirlineRegistered
+                            (
+                                address account
+                            )
+                            external
+                            view
+                            returns(bool)
+    {
+        require(account != address(0), "'account' must be a valid address.");
+        return airlines[account].isRegistered;
+    }
+
+
+
     /**
     * @dev Get operating status of contract
     *
@@ -84,6 +119,7 @@ contract FlightSuretyData {
                                 bool mode
                             ) 
                             external
+                            requireContractOwner
                             requireContractOwner 
     {
         operational = mode;
@@ -99,12 +135,26 @@ contract FlightSuretyData {
     *
     */   
     function registerAirline
-                            (   
+                            (
+                                address account
+                                bool hasPaid   
                             )
                             external
-                            pure
+                            requireIsOperational
+                            requireContractOwner
+
+
     {
+        // ensure that the airline is not already registered
+        require(!airlines[account].isRegistered, "Airline is already registered.");
+        
+        //register the airline, but not paid yet
+        airlines[account] = Airline({
+                                        isRegistered: true,
+                                        hasPaid: false
+                                    });
     }
+
 
 
    /**

@@ -15,7 +15,7 @@ contract FlightSuretyData {
 
     struct Airline {
         bool isRegistered;        
-        bool hasPaid; // confirm they gave 10 ether to participate
+        uint256 balance;
     }
 
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
@@ -37,10 +37,12 @@ contract FlightSuretyData {
     {
         contractOwner = msg.sender;
         ///TODO: need to register an airline right out the door, and confirm it has paid?
-        //register first airline at contract creation
+        //register first airline at contract creation, but this might need to wait for app? I dont think so though...
+        // but then it's always one... never removed, so maybe not...
         airlines[msg.sender] = Airline({
                                         isRegistered: true,
-                                        hasPaid: true
+                                        balance: 10
+
                                     });
 
     }
@@ -90,8 +92,20 @@ contract FlightSuretyData {
                             returns(bool)
     {
         require(account != address(0), "'account' must be a valid address.");
+        
         return airlines[account].isRegistered;
     }
+
+    function isAirlinePaid
+                        (
+                            address account
+                        )
+                        external
+                        view 
+                        returns (bool)
+                        {
+                            return airline[account].isAirlinePaid; // but this doesn't say how much. Need to check value in act?
+                        }
 
 
 
@@ -136,7 +150,7 @@ contract FlightSuretyData {
     */   
     function registerAirline
                             (
-                                address account
+                                address account,
                                 bool hasPaid   
                             )
                             external

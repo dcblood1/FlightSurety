@@ -25,7 +25,7 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
     address private contractOwner;          // Account used to deploy contract
-    FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
+    //FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
 
     struct Flight {
         bool isRegistered;
@@ -74,13 +74,13 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
-                                    address dataContract
+                                    //address dataContract
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
-        flightSuretyData = FlightSuretyData(dataContract);
-        flightSuretyData.registerAirline(msg.sender);
+        //flightSuretyData = FlightSuretyData(dataContract);
+        //flightSuretyData.registerAirline(msg.sender);
     }
 
     /********************************************************************************************/
@@ -108,12 +108,12 @@ contract FlightSuretyApp {
     */   
     function registerAirline
                             (   
-                                address account
+                                //address account
                             )
                             external
                             returns(bool success, uint256 votes) //idk what this votes is... maybe for something else
     {
-        require(!airlines[account].isRegistered, "Airline is already registered.");
+        //require(!airlines[account].isRegistered, "Airline is already registered.");
         
 
         return (success, 0);

@@ -7,10 +7,8 @@ contract('Flight Surety Tests', async (accounts) => {
   var config;
   before('setup contract', async () => {
     config = await Test.Config(accounts);
-    await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
+    //await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
   });
-
-
 
 
   /****************************************************************************************/
@@ -18,18 +16,26 @@ contract('Flight Surety Tests', async (accounts) => {
   /****************************************************************************************/
 
     ///////////////////////////////////// try to register new airline... one should go with contract out the door.
-    it('contract owner can register new airline', async () => {
+    it('contract owner is registered as first airline', async () => {
     
         // ARRANGE
         let caller = accounts[0]; // This should be config.owner or accounts[0] for registering a new user
         let newAirline = config.testAddresses[0]; 
     
+        console.log('woo');
+        //ACT
+        //await config.flightSuretyData.registerAirline() ///I dont need to regiester one... I just need to see 
+        let result = await config.flightSuretyData.isAirlineRegistered.call(caller) 
+
         // ACT
-        await config.exerciseC6A.registerUser(newUser, false, {from: caller});
-        let result = await config.exerciseC6A.isUserRegistered.call(newUser); 
+        //await config.exerciseC6A.registerUser(newUser, false, {from: caller});
+        //let result = await config.exerciseC6A.isUserRegistered.call(newUser); 
     
         // ASSERT
-        assert.equal(result, true, "Contract owner cannot register new user");
+        assert.equal(result, true, "contract owner is not registered as the airline")
+        //assert.equal(result, true, "Contract owner cannot register new user");
+
+        
      
     
     });

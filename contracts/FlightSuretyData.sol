@@ -15,7 +15,7 @@ contract FlightSuretyData {
 
     struct Airline {
         bool isRegistered;        
-        uint256 balance;
+        bool hasFunded;
     }
 
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
@@ -36,13 +36,11 @@ contract FlightSuretyData {
                                 public 
     {
         contractOwner = msg.sender;
-        ///TODO: need to register an airline right out the door, and confirm it has paid?
-        //register first airline at contract creation, but this might need to wait for app? I dont think so though...
-        // but then it's always one... never removed, so maybe not...
+        ///TODO: need to register an airline right out the door, and confirm it has paid
+        //Next, send eth, need send eth function in data contract, or can make it in app, and call. 
         airlines[msg.sender] = Airline({
                                         isRegistered: true,
-                                        balance: 10
-
+                                        hasFunded:false
                                     });
 
     }
@@ -96,16 +94,17 @@ contract FlightSuretyData {
         return airlines[account].isRegistered;
     }
 
-    function isAirlinePaid
-                        (
-                            address account
-                        )
-                        external
-                        view 
-                        returns (bool)
-                        {
-                            return airline[account].isAirlinePaid; // but this doesn't say how much. Need to check value in act?
-                        }
+    //function hasAirlinePaid
+      //                  (
+        //                    address account
+          //              )
+            //            external
+              //          view 
+                //        returns (bool)
+                  //      {
+                    //        return airline[account].isAirlinePaid; // but this doesn't say how much. Need to check value in act?
+                                // think it just needs to be a one time transaction of 10 eth. if not, fails
+                      //  }
 
 
 
@@ -139,6 +138,11 @@ contract FlightSuretyData {
         operational = mode;
     }
 
+    //gets balance of the contract.
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -151,7 +155,7 @@ contract FlightSuretyData {
     function registerAirline
                             (
                                 address account,
-                                bool hasPaid   
+                                bool hasFunded   
                             )
                             external
                             requireIsOperational
@@ -165,7 +169,7 @@ contract FlightSuretyData {
         //register the airline, but not paid yet
         airlines[account] = Airline({
                                         isRegistered: true,
-                                        hasPaid: false
+                                        hasFunded: false
                                     });
     }
 
@@ -219,6 +223,10 @@ contract FlightSuretyData {
                             public
                             payable
     {
+        //this is where I need to send funds to the contract account.
+        // Call returns a boolean value indicating success or failure.
+        //(bool sent, bytes memory data) = _to.call{value: msg.value}("");
+        //require(sent, "Failed to send Ether");
     }
 
     function getFlightKey
@@ -234,6 +242,8 @@ contract FlightSuretyData {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
+
+
     /**
     * @dev Fallback function for funding smart contract.
     *
@@ -242,9 +252,9 @@ contract FlightSuretyData {
                             external 
                             payable 
     {
-        fund();
+        //fund(); // msg.sender? funds the data contract? but want it to be the contract that has the data. Not the user. How we do this?
     }
-
+    //receive() external payable {} //fall back for receiving funding... might not need...
 
 }
 

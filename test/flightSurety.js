@@ -8,6 +8,7 @@ contract('Flight Surety Tests', async (accounts) => {
   before('setup contract', async () => {
     config = await Test.Config(accounts);
     //await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
+    dataAddress = await config.flightSuretyData.address; 
   });
 
 
@@ -22,23 +23,41 @@ contract('Flight Surety Tests', async (accounts) => {
         let caller = accounts[0]; // This should be config.owner or accounts[0] for registering a new user
         let newAirline = config.testAddresses[0]; 
     
-        console.log('woo');
         //ACT
         //await config.flightSuretyData.registerAirline() ///I dont need to regiester one... I just need to see 
         let result = await config.flightSuretyData.isAirlineRegistered.call(caller) 
 
-        // ACT
         //await config.exerciseC6A.registerUser(newUser, false, {from: caller});
         //let result = await config.exerciseC6A.isUserRegistered.call(newUser); 
     
         // ASSERT
-        assert.equal(result, true, "contract owner is not registered as the airline")
-        //assert.equal(result, true, "Contract owner cannot register new user");
-
+        assert.equal(result, true, "contract owner is not registered as the first airline")
         
-     
-    
+
     });
+
+    it('sends funds to data contract', async () => {
+
+        //arrange
+        let caller = accounts[0];
+        const payment = web3.utils.toWei(".25","ether");
+
+        //ACT
+        // send ether to contract
+        await web3.eth.sendTransaction({'to': config.flightSuretyData.address, 'from': caller, 'value': payment});
+        
+        
+        // getBalance function does not work... don't know why, how do I see
+        let result = await config.flightSuretyData.getBalance(); // function is calling, but value is still 0, and idk why...
+        
+        //ASSERT      
+        assert.equal(payment, result); // either of these work? //payment is correct... getBalance() is not.
+        
+
+        //await web3.eth.sendTransaction({'to': "0x245b347bbE38Dd83c2FE533e0C6f5ca89878BACF", 'from': caller, 'value': payment});
+        //let result2 = await web3.eth.getBalance(config.flightSuretyData.address);
+        
+    })
 
   it(`(multiparty) has correct initial isOperational() value`, async function () {
 

@@ -23,6 +23,7 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
+    uint256 public constant AirlineRegistrationFee = 10 ether; 
 
     address private contractOwner;          // Account used to deploy contract
     //FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
@@ -118,6 +119,21 @@ contract FlightSuretyApp {
 
         return (success, 0);
     }
+
+       /**
+    * @dev Add an airline to the registration queue
+    *
+    */   
+    //Transfers ether to main Data contract... but how... needs to go onto data, and will in catch all I believe...
+    function submitFunding() public payable{
+    //    bool sent = _to.send(msg.value);
+    //    flightSuretyData.fund.value(AirlineRegistrationFee)(msg.sender);
+        //I dont want mine to be fund, I want it to catch for now...
+        //address().send(msg.value);
+        
+    }
+
+
 
 
    /**

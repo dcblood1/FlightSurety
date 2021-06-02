@@ -36,23 +36,26 @@ contract('Flight Surety Tests', async (accounts) => {
 
     });
 
-    it('sends funds to data contract', async () => {
+    it('sends funds to data contract, and getBalance() works', async () => {
 
         //arrange
         let caller = accounts[0];
-        const payment = web3.utils.toWei(".25","ether");
+        const payment = web3.utils.toWei("10","ether");
 
         //ACT
         // send ether to contract
-        await web3.eth.sendTransaction({'to': config.flightSuretyData.address, 'from': caller, 'value': payment});
-        
-        
+        //await web3.eth.sendTransaction({'to': config.flightSuretyData.address, 'from': caller, 'value': payment});
+        let sent = await config.flightSuretyData.fund(caller, {from: caller, value: payment}); // does fail... so thats a good thing right??
+        //console.log(sent); //sent is an object, not a bool like I thought.
+        console.log(sent.receipt.status); //should be true?
         // getBalance function does not work... don't know why, how do I see
-        let result = await config.flightSuretyData.getBalance(); // function is calling, but value is still 0, and idk why...
+        let result = await config.flightSuretyData.getBalance(); //it worked!
+        
+        console.log(Number(result)); //this is 0... so fund is not working lolz.
         
         //ASSERT      
-        assert.equal(payment, result); // either of these work? //payment is correct... getBalance() is not.
-        
+        //assert.equal(payment, result); // either of these work? //payment is correct... getBalance() is not.
+        assert.equal(sent, result);
 
         //await web3.eth.sendTransaction({'to': "0x245b347bbE38Dd83c2FE533e0C6f5ca89878BACF", 'from': caller, 'value': payment});
         //let result2 = await web3.eth.getBalance(config.flightSuretyData.address);

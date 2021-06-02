@@ -19,6 +19,7 @@ contract FlightSuretyData {
     }
 
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
+    uint256 public constant AirlineRegistrationFee = 10 ether;
 
 
     /********************************************************************************************/
@@ -37,12 +38,13 @@ contract FlightSuretyData {
     {
         contractOwner = msg.sender;
         ///TODO: need to register an airline right out the door, and confirm it has paid
-        //Next, send eth, need send eth function in data contract, or can make it in app, and call. 
+        //I want this guy to send 10eth to the contract.
         airlines[msg.sender] = Airline({
                                         isRegistered: true,
                                         hasFunded:false
                                     });
-
+        //fund(msg.sender, AirlineRegistrationFee); // dont know if I can send this immediately
+        //TODO, send 10eth to the contract
     }
 
     /********************************************************************************************/
@@ -166,7 +168,7 @@ contract FlightSuretyData {
         // ensure that the airline is not already registered
         require(!airlines[account].isRegistered, "Airline is already registered.");
         
-        //register the airline, but not paid yet
+        //register the airline, but not paid yet, then they need to pay to participate.
         airlines[account] = Airline({
                                         isRegistered: true,
                                         hasFunded: false
@@ -218,15 +220,23 @@ contract FlightSuretyData {
     *
     */   
     function fund
-                            (   
+                            (
+                                address account
+                                   
                             )
                             public
                             payable
+                            returns(bool sent)
     {
-        //this is where I need to send funds to the contract account.
-        // Call returns a boolean value indicating success or failure.
-        //(bool sent, bytes memory data) = _to.call{value: msg.value}("");
-        //require(sent, "Failed to send Ether");
+        //sent = address(this).transfer(AirlineRegistrationFee); // Sends 10eth to contract,
+        require(msg.value >= AirlineRegistrationFee, "Not enough ether submitted, need 10 Ether.");
+        sent = address(this).send(msg.value); //is this working?
+        require(sent, "failed to send ether");
+        if (sent) {
+            airlines[account].hasFunded = true; 
+        }
+        
+        
     }
 
     function getFlightKey

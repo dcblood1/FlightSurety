@@ -21,12 +21,16 @@
 # 3: oracles submit information, if a minimum amount respond with the same information, emit flightStatusInfo to world to see.
 
 # requirements: Airlines
-# Airlines: register first airline is automatically deployed on creation, next ones can be registered by any others.
+# Airlines: register first airline is automatically deployed on creation, next ones can be registered by any others. 
 # registration of fifth and subsequent airlines requires multi-party consensus of 50% or more
 # airline can be registered but does not participate in the contract until 10 eth is deposited.
 
-# I can run tests on just the contract data, not how its supposed to work but thats ok. Test it first make sure it works. 
-# then you can test the app logic?
+# first airline is registered - check
+# can accept funds - check
+# now need to register next airline - from the app...
+# block from participating until 10eth deposited.
+# test setting operating status
+# once 5 or more, need multi-party consensus on setting operating status and registering new airlines
 
 # requirements: passengers
 # can pay up to 1 eth to participate

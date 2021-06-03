@@ -37,14 +37,11 @@ contract FlightSuretyData {
                                 public 
     {
         contractOwner = msg.sender;
-        ///TODO: need to register an airline right out the door, and confirm it has paid
-        //I want this guy to send 10eth to the contract.
+        //register first airline, not yet funded.
         airlines[msg.sender] = Airline({
                                         isRegistered: true,
                                         hasFunded:false
                                     });
-        //fund(msg.sender, AirlineRegistrationFee); // dont know if I can send this immediately
-        //TODO, send 10eth to the contract
     }
 
     /********************************************************************************************/
@@ -79,9 +76,9 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
    /**
-    * @dev Check if an airline is registered and has paid
+    * @dev Check if an airline is registered
     *
-    * @return A bool that indicates if the user is registered
+    * @return A bool that indicates if the airline is registered
     */   
     function isAirlineRegistered
                             (
@@ -96,17 +93,23 @@ contract FlightSuretyData {
         return airlines[account].isRegistered;
     }
 
-    //function hasAirlinePaid
-      //                  (
-        //                    address account
-          //              )
-            //            external
-              //          view 
-                //        returns (bool)
-                  //      {
-                    //        return airline[account].isAirlinePaid; // but this doesn't say how much. Need to check value in act?
-                                // think it just needs to be a one time transaction of 10 eth. if not, fails
-                      //  }
+   /**
+    * @dev Check if an airline has funded the contract
+    *
+    * @return A bool that indicates if the airline has paid the required 10 Eth
+    */   
+    function hasAirlinePaid
+                        (
+                            address account
+                        )
+                        external
+                        view 
+                        returns (bool)
+    {
+        require(account != address(0), "'account' must be a valid address.");
+
+        return airline[account].hasFunded; 
+    }
 
 
 
@@ -161,7 +164,7 @@ contract FlightSuretyData {
                             )
                             external
                             requireIsOperational
-                            requireContractOwner
+                            requireContractOwner //cannot have this for multi-party
 
 
     {
@@ -228,14 +231,12 @@ contract FlightSuretyData {
                             payable
                             returns(bool sent)
     {
-        //sent = address(this).transfer(AirlineRegistrationFee); // Sends 10eth to contract,
         require(msg.value >= AirlineRegistrationFee, "Not enough ether submitted, need 10 Ether.");
-        sent = address(this).send(msg.value); //is this working?
+        sent = address(this).send(msg.value); 
         require(sent, "failed to send ether");
         if (sent) {
             airlines[account].hasFunded = true; 
         }
-        
         
     }
 
@@ -262,9 +263,9 @@ contract FlightSuretyData {
                             external 
                             payable 
     {
-        //fund(); // msg.sender? funds the data contract? but want it to be the contract that has the data. Not the user. How we do this?
+        //fund();
     }
-    //receive() external payable {} //fall back for receiving funding... might not need...
+    
 
 }
 

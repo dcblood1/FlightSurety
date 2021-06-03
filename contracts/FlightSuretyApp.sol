@@ -26,7 +26,7 @@ contract FlightSuretyApp {
     uint256 public constant AirlineRegistrationFee = 10 ether; 
 
     address private contractOwner;          // Account used to deploy contract
-    //FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
+    FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
 
     struct Flight {
         bool isRegistered;
@@ -75,13 +75,12 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
-                                    //address dataContract
+                                    address dataContract
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
-        //flightSuretyData = FlightSuretyData(dataContract);
-        //flightSuretyData.registerAirline(msg.sender);
+        flightSuretyData = FlightSuretyData(dataContract); //fails right here...
     }
 
     /********************************************************************************************/
@@ -105,35 +104,29 @@ contract FlightSuretyApp {
   
    /**
     * @dev Add an airline to the registration queue
-    *
+    * input: airlines account
+    * output: register airline, but not funded
+    * function: 1 check if caller is registered and funded airline. Check if airline is already registered
+    *            
     */   
     function registerAirline
                             (   
-                                //address account
+                                address account
                             )
                             external
-                            returns(bool success, uint256 votes) //idk what this votes is... maybe for something else
+                            returns(bool success, uint256 votes) //votes to accept someone for multi-chain... not needed yet?
     {
-        //require(!airlines[account].isRegistered, "Airline is already registered.");
-        
+        require(!flightSuretyData.airlines[account].isRegistered, "Airline is already registered.");
+        require(flightSuretyData.airline[msg.sender].isFunded, "Airline Calling is not funded, therefore not a contract participant");
+
+        //register the airline, but they have not funded yet need to pay to participate.
+        flightSuretyData.airlines[account] = flightSuretyData.Airline({
+                                        isRegistered: true,
+                                        hasFunded: false
+                                    });
 
         return (success, 0);
     }
-
-       /**
-    * @dev Add an airline to the registration queue
-    *
-    */   
-    //Transfers ether to main Data contract... but how... needs to go onto data, and will in catch all I believe...
-    function submitFunding() public payable{
-    //    bool sent = _to.send(msg.value);
-    //    flightSuretyData.fund.value(AirlineRegistrationFee)(msg.sender);
-        //I dont want mine to be fund, I want it to catch for now...
-        //address().send(msg.value);
-        
-    }
-
-
 
 
    /**

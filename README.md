@@ -25,12 +25,12 @@
 # registration of fifth and subsequent airlines requires multi-party consensus of 50% or more
 # airline can be registered but does not participate in the contract until 10 eth is deposited.
 
-# first airline is registered - check
-# can accept funds - check
-# now need to register next airline - from the app...
-# block from participating until 10eth deposited.
-# test setting operating status
-# once 5 or more, need multi-party consensus on setting operating status and registering new airlines
+# first airline is registered - CHECK
+# can accept funds - CHECK
+# now need to register next airline from the app - CHECK 
+# block from participating until 10 Eth deposited. - CHECK
+# test setting operating status from solo - CHECK!
+# once 5 or more, need multi-party consensus on setting operating status and registering new airlines - NOT YET ## YOU ARE HERE......
 
 # requirements: passengers
 # can pay up to 1 eth to participate

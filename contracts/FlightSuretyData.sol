@@ -19,7 +19,7 @@ contract FlightSuretyData {
     }
 
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
-    uint256 public constant AirlineRegistrationFee = 10 ether;
+    uint256 public constant AirlineRegistrationFee = 1 ether; //TODO NEED TO CHANGE TO 10 ETHER #####################################
 
 
     /********************************************************************************************/
@@ -71,6 +71,15 @@ contract FlightSuretyData {
         _;
     }
 
+    /**
+    * @dev Modifier that requires the "airline" account to have funded the contract
+    */
+    modifier requireAirlineHasPaid()
+    {
+        require(hasAirlinePaid(msg.sender), "Caller must have paid to participate");
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -108,7 +117,7 @@ contract FlightSuretyData {
     {
         require(account != address(0), "'account' must be a valid address.");
 
-        return airline[account].hasFunded; 
+        return airlines[account].hasFunded; 
     }
 
 
@@ -137,9 +146,10 @@ contract FlightSuretyData {
                                 bool mode
                             ) 
                             external
-                            requireContractOwner
                             requireContractOwner 
+                            
     {
+
         operational = mode;
     }
 
@@ -164,7 +174,7 @@ contract FlightSuretyData {
                             )
                             external
                             requireIsOperational
-                            requireContractOwner //cannot have this for multi-party
+                            
 
 
     {

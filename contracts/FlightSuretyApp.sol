@@ -80,7 +80,7 @@ contract FlightSuretyApp {
                                 public 
     {
         contractOwner = msg.sender;
-        flightSuretyData = FlightSuretyData(dataContract); //fails right here...
+        flightSuretyData = FlightSuretyData(dataContract); 
     }
 
     /********************************************************************************************/
@@ -111,19 +111,26 @@ contract FlightSuretyApp {
     */   
     function registerAirline
                             (   
-                                address account
+                                address account,
+                                bool hasFunded
                             )
                             external
+                            requireIsOperational()
                             returns(bool success, uint256 votes) //votes to accept someone for multi-chain... not needed yet?
     {
-        require(!flightSuretyData.airlines[account].isRegistered, "Airline is already registered.");
-        require(flightSuretyData.airline[msg.sender].isFunded, "Airline Calling is not funded, therefore not a contract participant");
+        require(!flightSuretyData.isAirlineRegistered(account), "Airline is already registered.");
+        require(flightSuretyData.hasAirlinePaid(msg.sender), "Airline Calling is not funded, therefore not a contract participant");
 
         //register the airline, but they have not funded yet need to pay to participate.
-        flightSuretyData.airlines[account] = flightSuretyData.Airline({
-                                        isRegistered: true,
-                                        hasFunded: false
-                                    });
+        
+        flightSuretyData.registerAirline(account, hasFunded); //register the airline
+        
+        if (flightSuretyData.isAirlineRegistered(account)) {
+            success = true;
+        } else {
+            success = false;
+        }
+        
 
         return (success, 0);
     }
@@ -353,3 +360,10 @@ contract FlightSuretyApp {
 // endregion
 
 }   
+
+//this tells the app contract how to interact with this contract very important!
+contract FlightSuretyData {
+function isAirlineRegistered(address account) external view returns(bool);
+function hasAirlinePaid(address account) external view returns(bool);
+function registerAirline(address account, bool hasFunded) external;
+}

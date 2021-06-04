@@ -24,7 +24,7 @@ var Config = async function(accounts) {
     let firstAirline = accounts[1];
 
     let flightSuretyData = await FlightSuretyData.new(); //is this changing it? every time I run a test...
-    let flightSuretyApp = await FlightSuretyApp.new(flightSuretyData); // will eventually need to call FlightSuretyData in new().
+    let flightSuretyApp = await FlightSuretyApp.new(flightSuretyData.address); // will eventually need to call FlightSuretyData in new().
 
     
     return {

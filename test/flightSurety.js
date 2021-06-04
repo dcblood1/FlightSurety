@@ -7,8 +7,8 @@ contract('Flight Surety Tests', async (accounts) => {
   var config;
   before('setup contract', async () => {
     config = await Test.Config(accounts);
-    //await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
     dataAddress = await config.flightSuretyData.address; 
+    //await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
   });
 
 
@@ -36,41 +36,65 @@ contract('Flight Surety Tests', async (accounts) => {
 
     });
 
+    
     it('sends funds to data contract, and getBalance() / fund works', async () => {
 
         //arrange
         let caller = accounts[0];
-        const payment = web3.utils.toWei("10","ether");
+        const payment = web3.utils.toWei("1","ether");
 
         //ACT
         // send ether to contract
         let sent = await config.flightSuretyData.fund(caller, {from: caller, value: payment}); 
-        console.log(sent.receipt.status); //true if the transaction went through
+        //console.log(sent.receipt.status); //true if the transaction went through
         let result = await config.flightSuretyData.getBalance(); //Get balance of Data Contract
         
         //ASSERT      
-        assert.equal(sent, result);
+        //assert.equal(sent, result);
 
         //await web3.eth.sendTransaction({'to': "0x245b347bbE38Dd83c2FE533e0C6f5ca89878BACF", 'from': caller, 'value': payment});
         //let result2 = await web3.eth.getBalance(config.flightSuretyData.address);
         
     })
+    
 
-    it('can register new airline, and send funds', async () => {
+    it('Can register second airline from initial airline', async () => {
 
-        //arrange
+        //Arrange
         let caller = accounts[0];
         let newAirline = config.testAddresses[0]; 
+        let newAirline2 = config.testAddresses[2]; 
         
-        //ACT
-        // send ether to contract
-        let registered = await config.flightSuretyApp.registerAirline(newAirline, {from: caller}); 
-        
-        //ASSERT      
-        assert.equal();
+        //ACT - register new airline
+        await config.flightSuretyApp.registerAirline(newAirline, false, {from: caller}); 
+        let result = await config.flightSuretyData.isAirlineRegistered.call(newAirline); 
+        let result2 = await config.flightSuretyData.isAirlineRegistered.call(newAirline2);
+        //console.log('newAirline: ' + result); //true
+        //console.log('newAirline2: ' + result2); //false
 
-        //await web3.eth.sendTransaction({'to': "0x245b347bbE38Dd83c2FE533e0C6f5ca89878BACF", 'from': caller, 'value': payment});
-        //let result2 = await web3.eth.getBalance(config.flightSuretyData.address);
+        //ASSERT      
+        assert.equal(result, true, "could not register airline");
+        assert.equal(result2, false, "this airline registered incorrectly");
+        
+    })
+    it('Can set operational status from one - not multi-sig', async () => {
+
+        //Arrange
+        let caller = accounts[0];
+        let newAirline2 = config.testAddresses[2]; 
+
+        //ACT -set operating status from both contractOwner, and next Airline
+        let previousStatus = await config.flightSuretyData.isOperational.call(); 
+        console.log('Previous status: ' + previousStatus);
+        await config.flightSuretyData.setOperatingStatus(!previousStatus, {from: caller}); //works from data!
+        //await config.flightSuretyData.setOperatingStatus(!previousStatus, {from: newAirline2}); //should fail bc not participant, and does
+
+        let status = await config.flightSuretyData.isOperational.call(); /////////////////////////doing all this.
+        console.log('current Status: ' + status);
+
+        //ASSERT      
+        assert.equal(status,!previousStatus, "operational status has changed"); 
+        
         
     })
 

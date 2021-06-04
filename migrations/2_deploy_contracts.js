@@ -4,10 +4,10 @@ const fs = require('fs');
 
 module.exports = function(deployer) {
 
-    let firstAirline = '0xf17f52151EbEF6C7334FAD080c5704D77216b732';
+    let firstAirline = '0xf17f52151EbEF6C7334FAD080c5704D77216b732'; 
     deployer.deploy(FlightSuretyData)
     .then(() => {
-        return deployer.deploy(FlightSuretyApp)
+        return deployer.deploy(FlightSuretyApp, firstAirline) // is this what configures and allows us to run the tests?
                 .then(() => {
                     let config = {
                         localhost: {

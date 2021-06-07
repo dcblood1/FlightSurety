@@ -30,7 +30,10 @@
 # now need to register next airline from the app - CHECK 
 # block from participating until 10 Eth deposited. - CHECK
 # test setting operating status from solo - CHECK
-
+TODO
+First - ensure only registered, only funded airlines can vote on something
+Second - make it a modifier?
+Third - do operating status and registering new airlines.
 # once 5 or more, need multi-party consensus on setting operating status and registering new airlines
 
 # requirements: passengers

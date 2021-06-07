@@ -1,5 +1,5 @@
 var HDWalletProvider = require("truffle-hdwallet-provider");
-var mnemonic = "admit spider depend marble waste escape same enrich pottery provide want what";
+var mnemonic = "wrist return fence seven party knife transfer divorce ice sense couple awful";
 
 // my ganache: require metal oven elbow social reject fog expand curve silver story remember
 // given: candy maple cake sugar pudding cream honey rich smooth crumble sweet treat

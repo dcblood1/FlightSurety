@@ -11,6 +11,8 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
+    mapping(address => uint256) authorizedCallers;
+
 
 
     struct Airline {
@@ -72,14 +74,25 @@ contract FlightSuretyData {
     }
 
     /**
-    * @dev Modifier that requires the "airline" account to have funded the contract
+    * @dev Modifier that requires the calling contract to be in the "authorizedCallers" list
+    *      This is used on all functions(except those who are called by the contract owner)
+    *       to ensure that only the authorized app contracts gain access to the data on this contract
     */
-    modifier requireAirlineHasPaid()
+    modifier requireAuthorizedCaller()
     {
-        require(hasAirlinePaid(msg.sender), "Caller must have paid to participate");
-        _;
+        require(authorizedCallers[msg.sender] == 1, "Caller is not authorized, in data contract");
+        _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
+        //enable other contracts to call function, and authorize them
+    function authorizeCaller(address dataContract) external requireContractOwner {
+        authorizedCallers[dataContract] = 1;
+    }
+
+    function deauthorizeCaller(address dataContract) external requireContractOwner {
+        delete authorizedCallers[dataContract];
+    }
+ 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -146,16 +159,26 @@ contract FlightSuretyData {
                                 bool mode
                             ) 
                             external
-                            requireContractOwner 
-                            
+                            requireAuthorizedCaller()
     {
-
         operational = mode;
+        
     }
 
     //gets balance of the contract.
     function getBalance() public view returns (uint) {
         return address(this).balance;
+    }
+
+    //check if caller / contract is authorized
+    function isAuthorizedCaller(
+                                address account
+                                )
+                                public
+                                view 
+                                returns(uint256)
+    {
+        return authorizedCallers[account]; //if authorized caller is 1 then 
     }
 
     /********************************************************************************************/
@@ -173,9 +196,7 @@ contract FlightSuretyData {
                                 bool hasFunded   
                             )
                             external
-                            requireIsOperational
-                            
-
+                            requireIsOperational()
 
     {
         // ensure that the airline is not already registered
@@ -239,9 +260,12 @@ contract FlightSuretyData {
                             )
                             public
                             payable
+                            //need to put in modifier that caller has funded.
                             returns(bool sent)
     {
         require(msg.value >= AirlineRegistrationFee, "Not enough ether submitted, need 10 Ether.");
+        // make sure they have not already funded
+        require(airlines[account].hasFunded == false, "Airline has already funded");
         sent = address(this).send(msg.value); 
         require(sent, "failed to send ether");
         if (sent) {

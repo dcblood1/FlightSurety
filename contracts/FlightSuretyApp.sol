@@ -27,6 +27,7 @@ contract FlightSuretyApp {
 
     address private contractOwner;          // Account used to deploy contract
     FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
+    bool private operational; //for initial.
 
     struct Flight {
         bool isRegistered;
@@ -65,6 +66,7 @@ contract FlightSuretyApp {
         _;
     }
 
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -89,10 +91,50 @@ contract FlightSuretyApp {
 
     function isOperational() 
                             public 
-                            pure 
+                            view 
                             returns(bool) 
     {
-        return true;  // Modify to call data contract's status
+        return flightSuretyData.isOperational();  // Call data contract's status
+    }
+
+    /**
+    * @dev Sets contract operations on/off
+    *
+    * When operational mode is disabled, all write transactions except for this one will fail
+    */    
+    function setOperatingStatus
+                            (
+                                bool mode
+                            ) 
+                            external
+
+    {
+        require(flightSuretyData.hasAirlinePaid(msg.sender), "airline calling has not funded");
+        
+        flightSuretyData.setOperatingStatus(mode); // sets but does not return if successful.
+        
+    }
+
+    /**
+    * checks to see if an airline has paid the 10eth and funded
+     */
+    function hasAirlinePaid(address account) external view returns(bool) 
+    {
+        flightSuretyData.hasAirlinePaid(account); // we have to check in the app if they have paid.
+        return flightSuretyData.hasAirlinePaid(account);
+    }
+
+    /**
+    * Multi-Party Consensus
+    * Input - registered airlines
+    * Output: true / false based on the amount of votes
+    * 
+    */
+     
+    function multiPartyConsensus(address account) external view returns(bool) 
+    {
+        flightSuretyData.hasAirlinePaid(account); // we have to check in the app if they have paid.
+        return flightSuretyData.hasAirlinePaid(account);
     }
 
 
@@ -365,5 +407,7 @@ contract FlightSuretyApp {
 contract FlightSuretyData {
 function isAirlineRegistered(address account) external view returns(bool);
 function hasAirlinePaid(address account) external view returns(bool);
-function registerAirline(address account, bool hasFunded) external;
+function registerAirline(address account, bool hasFunded) external; 
+function isOperational() view returns(bool);
+function setOperatingStatus(bool mode) external;
 }

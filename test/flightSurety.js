@@ -8,7 +8,7 @@ contract('Flight Surety Tests', async (accounts) => {
   before('setup contract', async () => {
     config = await Test.Config(accounts);
     dataAddress = await config.flightSuretyData.address; 
-    //await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
+    await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address); // authorize to call the data contract from app contract
   });
 
 
@@ -16,12 +16,10 @@ contract('Flight Surety Tests', async (accounts) => {
   /* Operations and Settings                                                              */
   /****************************************************************************************/
 
-    ///////////////////////////////////// try to register new airline... one should go with contract out the door.
     it('contract owner is registered as first airline', async () => {
     
         // ARRANGE
-        let caller = accounts[0]; // This should be config.owner or accounts[0] for registering a new user
-        
+        let caller = accounts[0]; // This should be config.owner or accounts[0] for registering a new user   
     
         //ACT
         //await config.flightSuretyData.registerAirline() ///I dont need to regiester one... I just need to see 
@@ -62,11 +60,13 @@ contract('Flight Surety Tests', async (accounts) => {
 
         //Arrange
         let caller = accounts[0];
-        let newAirline = config.testAddresses[0]; 
+        let newAirline = accounts[1]; 
         let newAirline2 = config.testAddresses[2]; 
         
         //ACT - register new airline
-        await config.flightSuretyApp.registerAirline(newAirline, false, {from: caller}); 
+        let hasPaid = await config.flightSuretyData.hasAirlinePaid(caller);
+        //console.log('caller hasPaid? ' + hasPaid);
+        await config.flightSuretyApp.registerAirline(newAirline, false, {from: caller}); //why does this not work then? 
         let result = await config.flightSuretyData.isAirlineRegistered.call(newAirline); 
         let result2 = await config.flightSuretyData.isAirlineRegistered.call(newAirline2);
         //console.log('newAirline: ' + result); //true
@@ -77,25 +77,26 @@ contract('Flight Surety Tests', async (accounts) => {
         assert.equal(result2, false, "this airline registered incorrectly");
         
     })
-    it('Can set operational status from one - not multi-sig', async () => {
+    it('Can set operational status from one caller - not multi-sig', async () => {
 
         //Arrange
         let caller = accounts[0];
-        let newAirline2 = config.testAddresses[2]; 
-
-        //ACT -set operating status from both contractOwner, and next Airline
-        let previousStatus = await config.flightSuretyData.isOperational.call(); 
-        console.log('Previous status: ' + previousStatus);
-        await config.flightSuretyData.setOperatingStatus(!previousStatus, {from: caller}); //works from data!
-        //await config.flightSuretyData.setOperatingStatus(!previousStatus, {from: newAirline2}); //should fail bc not participant, and does
-
-        let status = await config.flightSuretyData.isOperational.call(); /////////////////////////doing all this.
-        console.log('current Status: ' + status);
-
+                
+        //ACT -set operating status from caller
+        let previousStatus = await config.flightSuretyApp.isOperational.call(); // True initially
+        //console.log('Previous operational status: ' + previousStatus);
+        let hasPaid = await config.flightSuretyApp.hasAirlinePaid(caller); // Coming from contract not the caller
+        //console.log('caller has paid: ' + hasPaid); 
+        await config.flightSuretyApp.setOperatingStatus(false, {from: caller});
+        let status = await config.flightSuretyApp.isOperational.call();
+        //console.log('current Status after app call: ' + status); // False
+        
         //ASSERT      
-        assert.equal(status,!previousStatus, "operational status has changed"); 
-        
-        
+        assert.equal(!previousStatus,status, "status did not change"); 
+
+         //change operating status back to true
+         await config.flightSuretyApp.setOperatingStatus(true, {from: caller});
+  
     })
 
   it(`(multiparty) has correct initial isOperational() value`, async function () {
@@ -103,6 +104,7 @@ contract('Flight Surety Tests', async (accounts) => {
     // Get operating status
     let status = await config.flightSuretyData.isOperational.call();
     assert.equal(status, true, "Incorrect initial operating status value");
+    
 
   });
 

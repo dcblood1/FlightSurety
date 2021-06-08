@@ -61,20 +61,20 @@ contract('Flight Surety Tests', async (accounts) => {
         //Arrange
         let caller = accounts[0];
         let newAirline = accounts[1]; 
-        let newAirline2 = config.testAddresses[2]; 
+        //let newAirline2 = config.testAddresses[2]; 
         
         //ACT - register new airline
         let hasPaid = await config.flightSuretyData.hasAirlinePaid(caller);
         //console.log('caller hasPaid? ' + hasPaid);
-        await config.flightSuretyApp.registerAirline(newAirline, false, {from: caller}); //why does this not work then? 
+        await config.flightSuretyApp.registerAirline(newAirline, false, {from: caller}); 
         let result = await config.flightSuretyData.isAirlineRegistered.call(newAirline); 
-        let result2 = await config.flightSuretyData.isAirlineRegistered.call(newAirline2);
+        //let result2 = await config.flightSuretyData.isAirlineRegistered.call(newAirline2);
         //console.log('newAirline: ' + result); //true
         //console.log('newAirline2: ' + result2); //false
 
         //ASSERT      
         assert.equal(result, true, "could not register airline");
-        assert.equal(result2, false, "this airline registered incorrectly");
+        //assert.equal(result2, false, "this airline registered incorrectly");
         
     })
     it('Can set operational status from one caller - not multi-sig', async () => {
@@ -97,7 +97,8 @@ contract('Flight Surety Tests', async (accounts) => {
          //change operating status back to true
          await config.flightSuretyApp.setOperatingStatus(true, {from: caller});
   
-    })
+    });
+
 
   it(`(multiparty) has correct initial isOperational() value`, async function () {
 
@@ -107,6 +108,43 @@ contract('Flight Surety Tests', async (accounts) => {
     
 
   });
+
+  it(`(multiparty) function call is made when multi-party threshold is reached - change operational status`, async function () {
+
+    //Arrange - register and fund 5 accounts 
+    let caller = accounts[0];
+    let newAirline2 = accounts[1];
+    let newAirline3 = accounts[2];
+    let newAirline4 = accounts[3];
+    let newAirline5 = accounts[4];
+    const payment = web3.utils.toWei("1","ether");
+
+
+    
+    await config.flightSuretyApp.registerAirline(newAirline3, false, {from: caller}); //register user, need to fund
+    await config.flightSuretyApp.registerAirline(newAirline4, false, {from: caller});
+      
+    await config.flightSuretyData.fund(newAirline2, {from: newAirline2, value: payment});
+    await config.flightSuretyData.fund(newAirline3, {from: newAirline3, value: payment});
+    await config.flightSuretyData.fund(newAirline4, {from: newAirline4, value: payment});
+
+    result = await config.flightSuretyData.getNumberOfApprovedAirlines();//number of registered and funded airlines.
+    console.log(Number(result)); //result is 4
+    
+    //go to setting the operatings status.
+    //Act - vote on multi-party for setting operational status
+    let status = await config.flightSuretyApp.setOperatingStatus(false, {from: caller}); //should return false
+    console.log('current status after setOperatingStatus' + status);
+
+
+    //Assert - did action happen? how do they vote?
+    assert.equal(status, false, "Incorrect initial operating status value");
+    
+    
+
+  });
+
+  //I need to understand how the multi-party works first
 
   it(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
 

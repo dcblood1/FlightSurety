@@ -37,6 +37,11 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
+    address[] multiCalls = new address[](0); // used to track all addresses that call consensus on operating status
+    //address[] operatingMultiCalls = new address[](0); // used to track all addresses that call consensus on operating status
+    //address[] registeringMultiCalls = new address[](0); // used to track all addresses that call consensus on registering status
+
+
  
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -97,6 +102,7 @@ contract FlightSuretyApp {
         return flightSuretyData.isOperational();  // Call data contract's status
     }
 
+
     /**
     * @dev Sets contract operations on/off
     *
@@ -109,10 +115,16 @@ contract FlightSuretyApp {
                             external
 
     {
-        require(flightSuretyData.hasAirlinePaid(msg.sender), "airline calling has not funded");
-        
-        flightSuretyData.setOperatingStatus(mode); // sets but does not return if successful.
-        
+
+        if (flightSuretyData.getNumberOfApprovedAirlines() > 4) {
+            //multi party consensus
+            if (multiPartyConsesnsus(msg.sender) == true) {
+                flightSuretyData.setOperatingStatus(mode);
+            }
+        } else{
+            require(flightSuretyData.hasAirlinePaid(msg.sender), "airline calling has not funded");
+            flightSuretyData.setOperatingStatus(mode); 
+        }
     }
 
     /**
@@ -120,21 +132,38 @@ contract FlightSuretyApp {
      */
     function hasAirlinePaid(address account) external view returns(bool) 
     {
-        flightSuretyData.hasAirlinePaid(account); // we have to check in the app if they have paid.
+        //flightSuretyData.hasAirlinePaid(account); // we have to check in the app if they have paid.
         return flightSuretyData.hasAirlinePaid(account);
     }
 
     /**
     * Multi-Party Consensus
-    * Input - registered airlines
-    * Output: true / false based on the amount of votes
-    * 
+    * Input -  funded & registered airlines account #'s msg.senders, 
+    * Output: added to multi-call array
+    * function - check for no duplicates
     */
-     
-    function multiPartyConsensus(address account) external view returns(bool) 
+    function multiPartyConsensus(address account) external returns(bool) 
     {
-        flightSuretyData.hasAirlinePaid(account); // we have to check in the app if they have paid.
-        return flightSuretyData.hasAirlinePaid(account);
+        require(flightSuretyData.hasAirlinePaid(msg.sender), "Airline Calling is not funded, therefore not a contract participant");
+
+        //no duplicates
+        bool isDuplicate = false; //makes sure one admin is not calling it multiple times
+        for(uint c=0; c<multiCalls.length; c++) { //normally don't want to iterate through an array, due to potential high gas costs
+            if (multiCalls[c] == msg.sender) {
+                isDuplicate = true;
+                break;
+            }
+        }
+        require(!isDuplicate, "Caller has already called this function.");
+        
+        //push to an array ------ YOU ARE HERE //not gonna be true or false, if you do it, thats a vote.
+        multiCalls.push(msg.sender); //add admin to array to change mode, if array long enough, enough admins want the change
+        if (multiCalls.length >= SafeMath.div(flightSuretyData.getNumberOfApprovedAirlines(), 2)) {
+            return true;
+            multiCalls = new address[](0); //reinitialize multicalls, dont forget this step      
+        } else {return false;}
+
+        
     }
 
 
@@ -163,8 +192,13 @@ contract FlightSuretyApp {
         require(!flightSuretyData.isAirlineRegistered(account), "Airline is already registered.");
         require(flightSuretyData.hasAirlinePaid(msg.sender), "Airline Calling is not funded, therefore not a contract participant");
 
-        //register the airline, but they have not funded yet need to pay to participate.
         
+        //bool result = multiPartyConsensus(account);
+        //if (result) {
+        //    flightSuretyData.registerAirline(account, hasFunded);    
+       // }
+
+        //register the airline, but they have not funded yet need to pay to participate.
         flightSuretyData.registerAirline(account, hasFunded); //register the airline
         
         if (flightSuretyData.isAirlineRegistered(account)) {

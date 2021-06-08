@@ -22,8 +22,9 @@ contract FlightSuretyData {
 
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
     uint256 public constant AirlineRegistrationFee = 1 ether; //TODO NEED TO CHANGE TO 10 ETHER #####################################
-
-
+    //do I really need to? or just have an array
+    address[] approvedAirlines; //can see which airlines addresses are approved, and add 
+    
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
@@ -44,6 +45,7 @@ contract FlightSuretyData {
                                         isRegistered: true,
                                         hasFunded:false
                                     });
+                                   
     }
 
     /********************************************************************************************/
@@ -96,6 +98,19 @@ contract FlightSuretyData {
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
+
+   /**
+    * @dev Check if an airline is registered
+    *
+    * @return A bool that indicates if the airline is registered
+    */   
+    function getNumberOfApprovedAirlines()
+                            public
+                            view
+                            returns(uint256)
+    {
+        return approvedAirlines.length;
+    }
 
    /**
     * @dev Check if an airline is registered
@@ -178,7 +193,7 @@ contract FlightSuretyData {
                                 view 
                                 returns(uint256)
     {
-        return authorizedCallers[account]; //if authorized caller is 1 then 
+        return authorizedCallers[account]; //if authorized caller is 1 then accept
     }
 
     /********************************************************************************************/
@@ -260,7 +275,7 @@ contract FlightSuretyData {
                             )
                             public
                             payable
-                            //need to put in modifier that caller has funded.
+                            //need to put in modifier that caller has funded. 
                             returns(bool sent)
     {
         require(msg.value >= AirlineRegistrationFee, "Not enough ether submitted, need 10 Ether.");
@@ -270,6 +285,7 @@ contract FlightSuretyData {
         require(sent, "failed to send ether");
         if (sent) {
             airlines[account].hasFunded = true; 
+            approvedAirlines.push(account); //adds to list of approved airlines for multi-party call
         }
         
     }

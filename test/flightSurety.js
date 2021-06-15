@@ -146,7 +146,7 @@ contract('Flight Surety Tests', async (accounts) => {
     assert.equal(status, false, "Incorrect initial operating status value"); //status changed from true to false.
   });
 
-  it(`(multiparty) has register 5th or more airlines requires multi-party consensus`, async function () {
+  it(`(multiparty) register 5th or more airlines requires multi-party consensus`, async function () {
 
     //Arrange - get 4 airlines
     let caller = accounts[0];
@@ -226,25 +226,6 @@ contract('Flight Surety Tests', async (accounts) => {
 
       // Set it back for other tests to work
       await config.flightSuretyData.setOperatingStatus(true);
-
-  });
-
-  it('(airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
-    
-    // ARRANGE
-    let newAirline = accounts[2];
-
-    // ACT
-    try {
-        await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
-    }
-    catch(e) {
-
-    }
-    let result = await config.flightSuretyData.isAirline.call(newAirline); 
-
-    // ASSERT
-    assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
 
   });
 

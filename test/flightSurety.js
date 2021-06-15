@@ -116,35 +116,73 @@ contract('Flight Surety Tests', async (accounts) => {
     let newAirline2 = accounts[1];
     let newAirline3 = accounts[2];
     let newAirline4 = accounts[3];
-    let newAirline5 = accounts[4];
     const payment = web3.utils.toWei("1","ether");
-
-
     
-    await config.flightSuretyApp.registerAirline(newAirline3, false, {from: caller}); //register user, need to fund
+    //register airlines
+    await config.flightSuretyApp.registerAirline(newAirline3, false, {from: caller}); 
     await config.flightSuretyApp.registerAirline(newAirline4, false, {from: caller});
-      
+    //fund airlines
     await config.flightSuretyData.fund(newAirline2, {from: newAirline2, value: payment});
     await config.flightSuretyData.fund(newAirline3, {from: newAirline3, value: payment});
     await config.flightSuretyData.fund(newAirline4, {from: newAirline4, value: payment});
 
+    //check to ensure approved airlines are correct number
     result = await config.flightSuretyData.getNumberOfApprovedAirlines();//number of registered and funded airlines.
-    console.log(Number(result)); //result is 4
+    //console.log(Number(result)); //result is 4 -  correct
+    let previousStatus = await config.flightSuretyApp.isOperational.call();
+    //console.log('current status before setOperatingStatus: ' + previousStatus);
     
-    //go to setting the operatings status.
     //Act - vote on multi-party for setting operational status
-    let status = await config.flightSuretyApp.setOperatingStatus(false, {from: caller}); //should return false
-    console.log('current status after setOperatingStatus' + status);
-
-
-    //Assert - did action happen? how do they vote?
-    assert.equal(status, false, "Incorrect initial operating status value");
+    await config.flightSuretyApp.setOperatingStatus(false, {from: caller});
+    await config.flightSuretyApp.setOperatingStatus(false, {from: newAirline2});
     
+    //get current status after changing
+    let status = await config.flightSuretyApp.isOperational.call();
+    //console.log('current status after setOperatingStatus: ' + status); 
+    let multicalls = await config.flightSuretyApp.howManyMultiCalls(); //see how many votes - should be 2
+    //console.log('how many multicalls: ' + multicalls); 
+    
+    //Assert - did action happen?
+    assert.equal(status, false, "Incorrect initial operating status value"); //status changed from true to false.
+  });
+
+  it(`(multiparty) has register 5th or more airlines requires multi-party consensus`, async function () {
+ ////////////////// YOU ARE HERE -- HAVING PROBLEMS WITH MULTI-PARTY CONSENSUS FUNCTION, DUPLICATES ARE CALLED WHEN THEY SHOULDN'T BE.
+ /////// THE MULTICALLERS IS COUNTING FROM THE WHEN SETTING OP STATUS, .
+    //Arrange - get 4 airlines
+    let caller = accounts[0];
+    let newAirline2 = accounts[1];
+    let newAirline5 = accounts[4];
+    const payment = web3.utils.toWei("1","ether");
+    //set status back to true
+    await config.flightSuretyApp.setOperatingStatus(true, {from: caller});
+    await config.flightSuretyApp.setOperatingStatus(true, {from: newAirline2});
+    let previousStatus = await config.flightSuretyApp.isOperational.call();
+    console.log('current status before registering : ' + previousStatus);
+
+    let result1 = await config.flightSuretyData.getNumberOfApprovedAirlines(); //number of registered and funded airlines.
+    console.log('Number of approved Airlines in registering: ' + Number(result1));
+
+    //let multicalls = await config.flightSuretyApp.howManyMultiCalls(); //see how many votes - should be 0
+    //console.log('how many multicalls for registering: ' + multicalls);
+
+
+    //Act - register 5th airline and more
+    //register airlines
+    await config.flightSuretyData.registerAirline(newAirline5, false, {from: caller}); 
+    await config.flightSuretyData.registerAirline(newAirline5, false, {from: newAirline2});
+    
+
+    
+
+    //Assert - 5th airline is registered
+    let result = await config.flightSuretyApp.isAirlineRegistered(newAirline5);
+    assert.equal(true,result, "5th airline did not register correctly with multi-party"); 
     
 
   });
 
-  //I need to understand how the multi-party works first
+  
 
   it(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
 

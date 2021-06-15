@@ -105,7 +105,7 @@ contract FlightSuretyData {
     * @return A bool that indicates if the airline is registered
     */   
     function getNumberOfApprovedAirlines()
-                            public
+                            external
                             view
                             returns(uint256)
     {

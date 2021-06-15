@@ -102,6 +102,43 @@ contract FlightSuretyApp {
         return flightSuretyData.isOperational();  // Call data contract's status
     }
 
+    function howManyMultiCalls() public view returns(uint256) {
+        return multiCalls.length;
+    }
+
+    
+    /**
+    * Multi-Party Consensus
+    * Input -  funded & registered airlines account #'s msg.senders, 
+    * Output: added to multi-call array
+    * function - check for no duplicates
+    */
+    function multiPartyConsensus(address account) public returns(bool) 
+    {
+        require(flightSuretyData.hasAirlinePaid(msg.sender), "Airline Calling is not funded, therefore not a contract participant");
+
+        //no duplicates
+        bool isDuplicate = false; //makes sure one admin is not calling it multiple times
+        for(uint c=0; c<multiCalls.length; c++) { //normally don't want to iterate through an array, due to potential high gas costs
+            if (multiCalls[c] == msg.sender) {
+                isDuplicate = true;
+                break;
+            }
+        }
+        require(!isDuplicate, "Multi-party Consensus function - Caller has already called this function.");
+        
+        //push to an array ------ YOU ARE HERE //not gonna be true or false voting, if you call the function, that acts as a vote.
+        multiCalls.push(msg.sender); //add admin to array to change mode, if array long enough, enough admins want the change
+        
+        if (multiCalls.length >= SafeMath.div(flightSuretyData.getNumberOfApprovedAirlines(), 2)) {
+            // Safemath always rounds down. so get to 50% or greater 
+            multiCalls = new address[](0); //reinitialize multicalls, dont forget this step 
+            return true;     
+        } else {
+            return false;
+            }    
+    }
+
 
     /**
     * @dev Sets contract operations on/off
@@ -112,13 +149,13 @@ contract FlightSuretyApp {
                             (
                                 bool mode
                             ) 
-                            external
+                            external 
 
     {
 
-        if (flightSuretyData.getNumberOfApprovedAirlines() > 4) {
-            //multi party consensus
-            if (multiPartyConsesnsus(msg.sender) == true) {
+        if (flightSuretyData.getNumberOfApprovedAirlines() >= 4) {
+            //multi party consensus for setting operatings status
+            if (multiPartyConsensus(msg.sender) == true) {
                 flightSuretyData.setOperatingStatus(mode);
             }
         } else{
@@ -136,38 +173,6 @@ contract FlightSuretyApp {
         return flightSuretyData.hasAirlinePaid(account);
     }
 
-    /**
-    * Multi-Party Consensus
-    * Input -  funded & registered airlines account #'s msg.senders, 
-    * Output: added to multi-call array
-    * function - check for no duplicates
-    */
-    function multiPartyConsensus(address account) external returns(bool) 
-    {
-        require(flightSuretyData.hasAirlinePaid(msg.sender), "Airline Calling is not funded, therefore not a contract participant");
-
-        //no duplicates
-        bool isDuplicate = false; //makes sure one admin is not calling it multiple times
-        for(uint c=0; c<multiCalls.length; c++) { //normally don't want to iterate through an array, due to potential high gas costs
-            if (multiCalls[c] == msg.sender) {
-                isDuplicate = true;
-                break;
-            }
-        }
-        require(!isDuplicate, "Caller has already called this function.");
-        
-        //push to an array ------ YOU ARE HERE //not gonna be true or false, if you do it, thats a vote.
-        multiCalls.push(msg.sender); //add admin to array to change mode, if array long enough, enough admins want the change
-        if (multiCalls.length >= SafeMath.div(flightSuretyData.getNumberOfApprovedAirlines(), 2)) {
-            return true;
-            multiCalls = new address[](0); //reinitialize multicalls, dont forget this step      
-        } else {return false;}
-
-        
-    }
-
-
-
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -175,9 +180,6 @@ contract FlightSuretyApp {
   
    /**
     * @dev Add an airline to the registration queue
-    * input: airlines account
-    * output: register airline, but not funded
-    * function: 1 check if caller is registered and funded airline. Check if airline is already registered
     *            
     */   
     function registerAirline
@@ -187,26 +189,30 @@ contract FlightSuretyApp {
                             )
                             external
                             requireIsOperational()
-                            returns(bool success, uint256 votes) //votes to accept someone for multi-chain... not needed yet?
+                            returns(bool success, uint256 votes) //votes to accept airline for multi-chain?
     {
+        //callers need to be registered and funded
         require(!flightSuretyData.isAirlineRegistered(account), "Airline is already registered.");
         require(flightSuretyData.hasAirlinePaid(msg.sender), "Airline Calling is not funded, therefore not a contract participant");
 
-        
-        //bool result = multiPartyConsensus(account);
-        //if (result) {
-        //    flightSuretyData.registerAirline(account, hasFunded);    
-       // }
 
-        //register the airline, but they have not funded yet need to pay to participate.
-        flightSuretyData.registerAirline(account, hasFunded); //register the airline
+        if(flightSuretyData.getNumberOfApprovedAirlines() >= 4) {
+            if (multiPartyConsensus(msg.sender) == true) {
+                //then register airline
+                flightSuretyData.registerAirline(account, hasFunded);
+            }
+        } else {
+            // else if not more than 4 airlines, register airline
+            flightSuretyData.registerAirline(account, hasFunded);
+            success = true; 
+        }
         
+
         if (flightSuretyData.isAirlineRegistered(account)) {
             success = true;
         } else {
             success = false;
         }
-        
 
         return (success, 0);
     }
@@ -444,4 +450,5 @@ function hasAirlinePaid(address account) external view returns(bool);
 function registerAirline(address account, bool hasFunded) external; 
 function isOperational() view returns(bool);
 function setOperatingStatus(bool mode) external;
+function getNumberOfApprovedAirlines() external view returns (uint256);
 }

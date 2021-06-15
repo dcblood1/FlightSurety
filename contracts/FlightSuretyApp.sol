@@ -38,10 +38,6 @@ contract FlightSuretyApp {
     mapping(bytes32 => Flight) private flights;
 
     address[] multiCalls = new address[](0); // used to track all addresses that call consensus on operating status
-    //address[] operatingMultiCalls = new address[](0); // used to track all addresses that call consensus on operating status
-    //address[] registeringMultiCalls = new address[](0); // used to track all addresses that call consensus on registering status
-
-
  
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -206,7 +202,6 @@ contract FlightSuretyApp {
             flightSuretyData.registerAirline(account, hasFunded);
             success = true; 
         }
-        
 
         if (flightSuretyData.isAirlineRegistered(account)) {
             success = true;

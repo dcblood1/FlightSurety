@@ -30,11 +30,7 @@
 # now need to register next airline from the app - CHECK 
 # block from participating until 10 Eth deposited. - CHECK
 # test setting operating status from solo - CHECK
-TODO
-First - get multi-party consensus to work ------ YOU ARE HERE --- IN APP GET MULTI-CONSENSUS TO WORK
-Second - make it a modifier, or some function to throw in anywhere
-Third - do operating status and registering new airlines.
-# once 5 or more, need multi-party consensus on setting operating status and registering new airlines
+# once 5 or more, need multi-party consensus on setting operating status and registering new airlines - CHECK
 
 # requirements: passengers
 # can pay up to 1 eth to participate

@@ -147,8 +147,7 @@ contract('Flight Surety Tests', async (accounts) => {
   });
 
   it(`(multiparty) has register 5th or more airlines requires multi-party consensus`, async function () {
- ////////////////// YOU ARE HERE -- HAVING PROBLEMS WITH MULTI-PARTY CONSENSUS FUNCTION, DUPLICATES ARE CALLED WHEN THEY SHOULDN'T BE.
- /////// THE MULTICALLERS IS COUNTING FROM THE WHEN SETTING OP STATUS, .
+
     //Arrange - get 4 airlines
     let caller = accounts[0];
     let newAirline2 = accounts[1];
@@ -163,22 +162,19 @@ contract('Flight Surety Tests', async (accounts) => {
     let result1 = await config.flightSuretyData.getNumberOfApprovedAirlines(); //number of registered and funded airlines.
     console.log('Number of approved Airlines in registering: ' + Number(result1));
 
-    //let multicalls = await config.flightSuretyApp.howManyMultiCalls(); //see how many votes - should be 0
-    //console.log('how many multicalls for registering: ' + multicalls);
-
-
     //Act - register 5th airline and more
     //register airlines
-    await config.flightSuretyData.registerAirline(newAirline5, false, {from: caller}); 
-    await config.flightSuretyData.registerAirline(newAirline5, false, {from: newAirline2});
-    
-
-    
+    await config.flightSuretyApp.registerAirline(newAirline5, false, {from: caller}); 
+    await config.flightSuretyApp.registerAirline(newAirline5, false, {from: newAirline2});
 
     //Assert - 5th airline is registered
-    let result = await config.flightSuretyApp.isAirlineRegistered(newAirline5);
+    let result = await config.flightSuretyData.isAirlineRegistered(newAirline5);
+    await config.flightSuretyData.fund(newAirline5, {from: newAirline5, value: payment});
+
+    let result2 = await config.flightSuretyData.getNumberOfApprovedAirlines(); //number of registered and funded airlines.
+    console.log('Number of approved Airlines after registering: ' + Number(result2));
+
     assert.equal(true,result, "5th airline did not register correctly with multi-party"); 
-    
 
   });
 

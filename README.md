@@ -32,10 +32,11 @@
 # test setting operating status from solo - CHECK
 # once 5 or more, need multi-party consensus on setting operating status and registering new airlines - CHECK
 
-# requirements: passengers
-# can pay up to 1 eth to participate
-# flight numbers and timestamps can be fixed just for this project.
+# requirements: passengers -- YOU ARE HERE
+# can pay up to 1 eth to participate by buying insurance on a flight.
+# flight numbers and timestamps can be fixed just for this project. Want to list in Dapp client (?? App portion correct?)
 # if flight is delayed, user gets 1.5 x amount paid.
+# funds are transferred only if users initiate a withdraw.
 
 # general - for multi-party consensus can write it for multipe purposes, not only operational, or only registering.
 # pure is used in data contract, which does not change state, so will need to remove for many functions.

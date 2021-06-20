@@ -19,10 +19,17 @@ contract FlightSuretyData {
         bool isRegistered;        
         bool hasFunded;
     }
+    
+    struct Passenger{
+        bool isRegistered;
+        bytes32 flightNumber;
+        uint8 paidAmount;
+    }
 
+    mapping(address => Passenger) private passengers; // mapping of address to passenger profiles
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
     uint256 public constant AirlineRegistrationFee = 1 ether; //TODO NEED TO CHANGE TO 10 ETHER #####################################
-    //do I really need to? or just have an array
+    uint256 public constant maxInsuranceAmount = 1 ether;
     address[] approvedAirlines; //can see which airlines addresses are approved, and add 
     
     /********************************************************************************************/
@@ -129,6 +136,23 @@ contract FlightSuretyData {
         
         return airlines[account].isRegistered;
     }
+       /**
+    * @dev Check if an airline is registered
+    *
+    * @return A bool that indicates if the airline is registered
+    */   
+    function isPassengerRegistered
+                            (
+                                address account
+                            )
+                            external
+                            view
+                            returns(bool)
+    {
+        require(account != address(0), "'account' must be a valid address.");
+        
+        return passengers[account].isRegistered;
+    }
 
    /**
     * @dev Check if an airline has funded the contract
@@ -180,7 +204,7 @@ contract FlightSuretyData {
         
     }
 
-    //gets balance of the contract.
+    //gets balance of an address.
     function getBalance() public view returns (uint) {
         return address(this).balance;
     }
@@ -228,19 +252,42 @@ contract FlightSuretyData {
 
    /**
     * @dev Buy insurance for a flight
-    *
+    *input: flightNumber, how much eth, up to 1eth
+    *output: return true
+    * function: transfer funds to the insurance contract
+    * note that the user bought it on that flight
     */   
     function buy
-                            (                             
+                            (
+                                bytes32 flight,
+                                uint8 amount,
+                                address account                             
                             )
-                            external
-                            payable
+                            external //called externally from another contract
+                            payable // able to send ether
+                            
     {
+
+        //ensure amount is less than one eth
+        require(msg.value < maxInsuranceAmount, "Max of One ether allowed, submit less.");
+        
+        //first send transaction        
+        bool sent = address(this).send(msg.value); 
+        require(sent, "failed to send ether");
+        
+        passengers[account] = Passenger({
+            flightNumber: flight,
+            paidAmount: amount,
+            isRegistered: true
+        });
+        
 
     }
 
     /**
      *  @dev Credits payouts to insurees
+     * input: user account number, 
+     * amount to give back * input amount
     */
     function creditInsurees
                                 (

@@ -157,10 +157,10 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyApp.setOperatingStatus(true, {from: caller});
     await config.flightSuretyApp.setOperatingStatus(true, {from: newAirline2});
     let previousStatus = await config.flightSuretyApp.isOperational.call();
-    console.log('current status before registering : ' + previousStatus);
+    //console.log('current status before registering : ' + previousStatus);
 
     let result1 = await config.flightSuretyData.getNumberOfApprovedAirlines(); //number of registered and funded airlines.
-    console.log('Number of approved Airlines in registering: ' + Number(result1));
+    //console.log('Number of approved Airlines in registering: ' + Number(result1));
 
     //Act - register 5th airline and more
     //register airlines
@@ -172,62 +172,34 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyData.fund(newAirline5, {from: newAirline5, value: payment});
 
     let result2 = await config.flightSuretyData.getNumberOfApprovedAirlines(); //number of registered and funded airlines.
-    console.log('Number of approved Airlines after registering: ' + Number(result2));
+    //console.log('Number of approved Airlines after registering: ' + Number(result2));
 
     assert.equal(true,result, "5th airline did not register correctly with multi-party"); 
 
   });
 
-  
+  it(`(passangers) - can buy flight insurance on a certain flight, `, async function () {
 
-  it(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
+    //Arrange -- need test account, need flight
+    let user1 = accounts[9];
+    let caller = accounts[0];
+    let flightNumber = web3.utils.asciiToHex("1234"); //strings cannot be passed btw contracts, bc not fixed size.
+    const payment = web3.utils.toWei("1","ether");
+    //register a flight
+    await config.flightSuretyApp.registerFlight(flightNumber, {from: caller}); 
+    //check if flight is registered
+    let result1 = await config.flightSuretyApp.isFlightRegistered(flightNumber); 
+    assert(result1,true, "flight could not register correctly");
 
-      // Ensure that access is denied for non-Contract Owner account
-      let accessDenied = false;
-      try 
-      {
-          await config.flightSuretyData.setOperatingStatus(false, { from: config.testAddresses[2] });
-      }
-      catch(e) {
-          accessDenied = true;
-      }
-      assert.equal(accessDenied, true, "Access not restricted to Contract Owner");
-            
+     //Act - allow user to purchase insurance for a specific flight
+    await config.flightSuretyApp.buy(flightNumber, payment, user1, {from: user1, value: payment});    
+    //check if passenger is registered
+    let result3 = await config.flightSuretyData.isPassengerRegistered(user1); //pass in extra parameters. worth?
+
+    //Assert
+    assert(result3, true, "user1 could not buy flight insurance")
   });
 
-  it(`(multiparty) can allow access to setOperatingStatus() for Contract Owner account`, async function () {
-
-      // Ensure that access is allowed for Contract Owner account
-      let accessDenied = false;
-      try 
-      {
-          await config.flightSuretyData.setOperatingStatus(false);
-      }
-      catch(e) {
-          accessDenied = true;
-      }
-      assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
-      
-  });
-
-  it(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
-
-      await config.flightSuretyData.setOperatingStatus(false);
-
-      let reverted = false;
-      try 
-      {
-          await config.flightSurety.setTestingMode(true);
-      }
-      catch(e) {
-          reverted = true;
-      }
-      assert.equal(reverted, true, "Access not blocked for requireIsOperational");      
-
-      // Set it back for other tests to work
-      await config.flightSuretyData.setOperatingStatus(true);
-
-  });
 
 
 });

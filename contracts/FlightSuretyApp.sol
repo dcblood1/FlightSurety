@@ -23,7 +23,8 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
-    uint256 public constant AirlineRegistrationFee = 10 ether; 
+    uint256 public constant AirlineRegistrationFee = 10 ether;
+    uint256 public constant maxInsuranceAmount = 1 ether; 
 
     address private contractOwner;          // Account used to deploy contract
     FlightSuretyData flightSuretyData;      // data function, can now call all functions in flightSuretyData
@@ -83,7 +84,7 @@ contract FlightSuretyApp {
                                 public 
     {
         contractOwner = msg.sender;
-        flightSuretyData = FlightSuretyData(dataContract); 
+        flightSuretyData = FlightSuretyData(dataContract);
     }
 
     /********************************************************************************************/
@@ -212,6 +213,12 @@ contract FlightSuretyApp {
         return (success, 0);
     }
 
+    //determine if a flight is registered, returns true or false.
+    function isFlightRegistered(bytes32 flightNumber) view returns(bool)
+    {
+        return flights[flightNumber].isRegistered; 
+    }
+
 
    /**
     * @dev Register a future flight for insuring.
@@ -219,10 +226,59 @@ contract FlightSuretyApp {
     */  
     function registerFlight
                                 (
+                                    bytes32 flightNumber
                                 )
-                                external
-                                pure
+                                requireIsOperational()
+                                
+                                external //must be external for transactions  
+                                
     {
+        // ensure that the airline is not already registered
+        require(flightSuretyData.isAirlineRegistered(msg.sender), "Caller must be a registered Airline to registerFlight.");
+        
+        //only sets airline registering flight as the airline. cannot set it for anyone else.
+        flights[flightNumber] = Flight({
+            isRegistered: true,
+            statusCode:0,
+            updatedTimestamp: 1623983777, //set for test, but realistically would be changed accordingly.
+            airline: msg.sender
+        });
+    }
+
+       /**
+    * @dev Buy insurance for a flight
+    *input: flightNumber, how much eth, up to 1eth
+    *output: return true
+    * function: transfer funds to the insurance contract
+    * note that the user bought it on that flight
+    */   
+    function buy
+                            (
+                                bytes32 flight,
+                                uint8 amount,
+                                address account                         
+                            )
+                            external //called externally from another contract
+                            payable // able to send ether
+                            returns (bool success)
+    {
+
+        //check flight is legit
+
+        //then call data
+        require(msg.value <= maxInsuranceAmount, "App - Max of One ether allowed, submit less.");
+        require(isFlightRegistered(flight), "App - No flight found at that flight Number");
+        
+        flightSuretyData.buy(flight, amount, account); //buy flight insurance
+        
+        
+        if (flightSuretyData.isPassengerRegistered(account)) {
+            success = true;
+        } else {
+            success = false;
+        }
+
+        return success;
 
     }
     
@@ -434,15 +490,17 @@ contract FlightSuretyApp {
         return random;
     }
 
-// endregion
+// end region
 
 }   
 
-//this tells the app contract how to interact with this contract very important!
+//this tells the app contract how to interact with this Data contract very important!
 contract FlightSuretyData {
 function isAirlineRegistered(address account) external view returns(bool);
+function isPassengerRegistered(address account) external view returns(bool);
 function hasAirlinePaid(address account) external view returns(bool);
-function registerAirline(address account, bool hasFunded) external; 
+function registerAirline(address account, bool hasFunded) external;
+function buy(bytes32 flight, uint8 amount, address account) external;  
 function isOperational() view returns(bool);
 function setOperatingStatus(bool mode) external;
 function getNumberOfApprovedAirlines() external view returns (uint256);

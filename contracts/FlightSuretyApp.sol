@@ -213,36 +213,48 @@ contract FlightSuretyApp {
         return (success, 0);
     }
 
-    //determine if a flight is registered, returns true or false.
-    function isFlightRegistered(bytes32 flightNumber) view returns(bool)
-    {
-        return flights[flightNumber].isRegistered; 
-    }
-
-
    /**
     * @dev Register a future flight for insuring.
     *
     */  
     function registerFlight
                                 (
-                                    bytes32 flightNumber
+                                    address airline,
+                                    string flight,
+                                    uint256 timestamp
                                 )
                                 requireIsOperational()
-                                
                                 external //must be external for transactions  
                                 
     {
-        // ensure that the airline is not already registered
-        require(flightSuretyData.isAirlineRegistered(msg.sender), "Caller must be a registered Airline to registerFlight.");
-        
-        //only sets airline registering flight as the airline. cannot set it for anyone else.
-        flights[flightNumber] = Flight({
-            isRegistered: true,
-            statusCode:0,
-            updatedTimestamp: 1623983777, //set for test, but realistically would be changed accordingly.
-            airline: msg.sender
-        });
+
+        bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
+        emit Log(msg.sender, "Hello World!");
+        emit Log2(msg.sender, key);
+
+        //require that flight is not already registered
+        require(!flightSuretyData.isFlightRegistered(key), 'app - flight is already registered');
+
+        //pass to flightData
+        flightSuretyData.registerFlight(key, airline, timestamp);
+
+    }
+
+    // I dont want it to have this? does it need to match? 
+    function isFlightRegistered
+                            (
+                                address airline,
+                                string flight,
+                                uint256 timestamp
+                            )
+                            public
+                            view
+                            returns(bool)
+    {
+
+        //get flight key
+        bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
+        return flightSuretyData.isFlightRegistered(key);
     }
 
        /**
@@ -254,11 +266,13 @@ contract FlightSuretyApp {
     */   
     function buy
                             (
-                                bytes32 flight,
+                                address airline,
+                                string flight,
+                                uint256 timestamp,
                                 uint8 amount,
-                                address account                         
+                                address passenger                         
                             )
-                            external //called externally from another contract
+                            public //called externally from another contract
                             payable // able to send ether
                             returns (bool success)
     {
@@ -267,12 +281,13 @@ contract FlightSuretyApp {
 
         //then call data
         require(msg.value <= maxInsuranceAmount, "App - Max of One ether allowed, submit less.");
-        require(isFlightRegistered(flight), "App - No flight found at that flight Number");
         
-        flightSuretyData.buy(flight, amount, account); //buy flight insurance
+        require(isFlightRegistered(airline, flight, timestamp), "App - No flight found at that flight Number");
         
+        flightSuretyData.buy(airline, flight, timestamp, amount, passenger); //buy flight insurance
+        //can you not pass string?
         
-        if (flightSuretyData.isPassengerRegistered(account)) {
+        if (flightSuretyData.isPassengerRegistered(passenger)) {
             success = true;
         } else {
             success = false;
@@ -284,18 +299,36 @@ contract FlightSuretyApp {
     
    /**
     * @dev Called after oracle has updated flight status
-    * very important, has to process what happens after a flight status returns. -> only event 20, 
+    * very important, has to process what happens after a flight status returns. -> only event 20
     */  
     function processFlightStatus
                                 (
                                     address airline,
-                                    string memory flight,
+                                    string flight,
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
                                 internal
                                 pure
+                                //returns (uint8)
     {
+        //return flights[flight].statusCode;
+    }
+
+    // Query the status of any flight -> used for testing
+    function viewFlightStatus
+                            (
+                                string flight,
+                                uint256 timestamp
+                            )
+                            external
+                            view
+                            returns(uint8)
+    {
+            //require(flights[flightKey].isRegistered, "Flight not registered"); //here?? //so... not registered eh??
+
+            //bytes32 flightKey = keccak256(abi.encodePacked(airline, flight, timestamp));
+            //return flights[flightKey].statusCode; //this wont work.
     }
 
 
@@ -303,7 +336,7 @@ contract FlightSuretyApp {
     function fetchFlightStatus
                         (
                             address airline,
-                            string flight,
+                            string flight, 
                             uint256 timestamp                            
                         )
                         external
@@ -317,7 +350,7 @@ contract FlightSuretyApp {
                                                 isOpen: true
                                             });
 
-        emit OracleRequest(index, airline, flight, timestamp);
+        emit OracleRequest(index, airline, flight, timestamp); //and this is the problem.
     } 
 
 
@@ -330,12 +363,13 @@ contract FlightSuretyApp {
     uint256 public constant REGISTRATION_FEE = 1 ether;
 
     // Number of oracles that must respond for valid status
-    uint256 private constant MIN_RESPONSES = 3;
+    uint256 private constant MIN_RESPONSES = 1; //TODO: need to change to 3 or higher number
+
 
 
     struct Oracle {
         bool isRegistered;
-        uint8[3] indexes;        
+        uint8[3] indexes; //3 random numbers       
     }
 
     // Track all registered oracles
@@ -363,6 +397,8 @@ contract FlightSuretyApp {
     // Oracles track this and if they have a matching index
     // they fetch data and submit a response
     event OracleRequest(uint8 index, address airline, string flight, uint256 timestamp);
+    event Log(address indexed sender, string message); //TODO delete
+    event Log2(address indexed sender, bytes32 message);
 
 
     // Register an oracle with the contract
@@ -381,6 +417,18 @@ contract FlightSuretyApp {
                                         isRegistered: true,
                                         indexes: indexes
                                     });
+    }
+
+    function getOracle
+                        (
+                            address account
+                        )
+                        external
+                        view
+                        //requireContractOwner
+                        returns(bool)
+    {
+        return oracles[account].isRegistered; //should be true? why is it not?
     }
 
     function getMyIndexes
@@ -402,30 +450,38 @@ contract FlightSuretyApp {
     // For the response to be accepted, there must be a pending request that is open
     // and matches one of the three Indexes randomly assigned to the oracle at the
     // time of registration (i.e. uninvited oracles are not welcome)
+    // input: index - of oracle, flight, timestamp, statusId
+    // output: flight status
+    //function: 1. check index of oracle matches one that is requested
+    // ensure key is correct of the flight
+    // get the status of the flight
+    // once enough updates emits even showing the response
     function submitOracleResponse
                         (
                             uint8 index,
                             address airline,
-                            string flight,
+                            string flight, //taking in a string. this not correct? chnage anything?
                             uint256 timestamp,
                             uint8 statusCode
                         )
                         external
     {
+        
         require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
 
-
+        // check key of requested flight
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp)); 
-        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
+        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request"); //why??
 
-        oracleResponses[key].responses[statusCode].push(msg.sender);
+        oracleResponses[key].responses[statusCode].push(msg.sender); //this is not working bc length never increases above 1 in code below
 
         // Information isn't considered verified until at least MIN_RESPONSES
         // oracles respond with the *** same *** information
-        emit OracleReport(airline, flight, timestamp, statusCode);
-        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) {
+        
+        emit OracleReport(airline, flight, timestamp, statusCode); 
+        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) { //with min responses set to 1 still not reading.
 
-            emit FlightStatusInfo(airline, flight, timestamp, statusCode);
+            emit FlightStatusInfo(airline, flight, timestamp, statusCode); //this will show?
 
             // Handle flight status as appropriate
             processFlightStatus(airline, flight, timestamp, statusCode);
@@ -439,11 +495,14 @@ contract FlightSuretyApp {
                             string flight,
                             uint256 timestamp
                         )
-                        pure
-                        internal
+                        
+                        external //want it to be internal I guess so change after testing? //just call data
                         returns(bytes32) 
     {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
+        //why doesn't this call data?
+        //does this even exist?
+        // guess it returns
+        return flightSuretyData.getFlightKey(airline, flight, timestamp);
     }
 
     // Returns array of three non-duplicating integers from 0-9
@@ -500,8 +559,12 @@ function isAirlineRegistered(address account) external view returns(bool);
 function isPassengerRegistered(address account) external view returns(bool);
 function hasAirlinePaid(address account) external view returns(bool);
 function registerAirline(address account, bool hasFunded) external;
-function buy(bytes32 flight, uint8 amount, address account) external;  
+function registerFlight(bytes32 flightKey, address airline, uint256 timestamp) external;
+function buy(address airline, bytes32 flight, uint256 timestamp, uint8 amount, address account) public payable;  
 function isOperational() view returns(bool);
 function setOperatingStatus(bool mode) external;
 function getNumberOfApprovedAirlines() external view returns (uint256);
+function isFlightRegistered(bytes32 key) public view returns (bool);
+function getFlightKey(address airline, string flight, uint256 timestamp) public view returns (bytes32);
+
 }

@@ -19,15 +19,26 @@ contract FlightSuretyData {
         bool isRegistered;        
         bool hasFunded;
     }
+
+    struct Flight {
+        bool isRegistered;
+        uint8 statusCode;
+        uint256 updatedTimestamp;        
+        address airline;
+    }
     
     struct Passenger{
+        address airline;
+        bytes32 flightKey;
         bool isRegistered;
-        bytes32 flightNumber;
+        string flightNumber;
         uint8 paidAmount;
     }
 
     mapping(address => Passenger) private passengers; // mapping of address to passenger profiles
     mapping(address => Airline) private airlines; // mapping of address to airline profiles
+    mapping(bytes32 => Flight) private flights; //mapping of bytes32 flight keys to Flights
+
     uint256 public constant AirlineRegistrationFee = 1 ether; //TODO NEED TO CHANGE TO 10 ETHER #####################################
     uint256 public constant maxInsuranceAmount = 1 ether;
     address[] approvedAirlines; //can see which airlines addresses are approved, and add 
@@ -136,10 +147,32 @@ contract FlightSuretyData {
         
         return airlines[account].isRegistered;
     }
-       /**
-    * @dev Check if an airline is registered
+
+    /**
+    * @dev Check if an flight is registered
     *
-    * @return A bool that indicates if the airline is registered
+    * @return A bool that indicates if the flight is registered
+    */   
+    function isFlightRegistered
+                            (
+                                bytes32 key
+                            )
+                            external
+                            view
+                            returns(bool) //TODO; return other information as well
+    {
+
+        //get flight key
+        return flights[key].isRegistered;
+        //TODO: return other information as well.
+    }
+
+
+
+    /**
+    * @dev Check if an passenger is registered
+    *
+    * @return A bool that indicates if the passenger is registered
     */   
     function isPassengerRegistered
                             (
@@ -248,6 +281,30 @@ contract FlightSuretyData {
                                     });
     }
 
+    /**
+    * @dev Add a flight to the registration queue
+    *      Can only be called from FlightSuretyApp contract
+    *
+    */   
+    function registerFlight
+                            (
+                                bytes32 flightKey,
+                                address airline,
+                                uint256 timestamp 
+                            )
+                            external
+                            requireIsOperational()
+
+    {
+        //register the flight
+        flights[flightKey] = Flight({
+            isRegistered: true,
+            statusCode:10,
+            updatedTimestamp: timestamp,
+            airline: airline
+        });
+    }
+
 
 
    /**
@@ -259,9 +316,11 @@ contract FlightSuretyData {
     */   
     function buy
                             (
-                                bytes32 flight,
+                                address airline,
+                                string flight,
+                                uint256 timestamp,
                                 uint8 amount,
-                                address account                             
+                                address passenger                             
                             )
                             external //called externally from another contract
                             payable // able to send ether
@@ -274,9 +333,12 @@ contract FlightSuretyData {
         //first send transaction        
         bool sent = address(this).send(msg.value); 
         require(sent, "failed to send ether");
+        bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
         
-        passengers[account] = Passenger({
+        passengers[passenger] = Passenger({
+            airline: airline,
             flightNumber: flight,
+            flightKey: key,
             paidAmount: amount,
             isRegistered: true
         });
@@ -340,14 +402,15 @@ contract FlightSuretyData {
     function getFlightKey
                         (
                             address airline,
-                            string memory flight,
+                            string flight, // was string memory flight - I changed it...
                             uint256 timestamp
                         )
-                        pure
-                        internal
+                        external
                         returns(bytes32) 
     {
+        
         return keccak256(abi.encodePacked(airline, flight, timestamp));
+        
     }
 
 

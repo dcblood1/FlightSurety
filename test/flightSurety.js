@@ -178,21 +178,25 @@ contract('Flight Surety Tests', async (accounts) => {
 
   });
 
+  // TODO: ALL THIS IS INCORRECT NOW DUE TO CHANGE IN REGISTER FLIGHT
   it(`(passangers) - can buy flight insurance on a certain flight, `, async function () {
 
     //Arrange -- need test account, need flight
     let user1 = accounts[9];
     let caller = accounts[0];
-    let flightNumber = web3.utils.asciiToHex("1234"); //strings cannot be passed btw contracts, bc not fixed size.
+    let flight = "1234"; //strings cannot be passed btw contracts, bc not fixed size.
     const payment = web3.utils.toWei("1","ether");
+    let timestamp = 631432800;
     //register a flight
-    await config.flightSuretyApp.registerFlight(flightNumber, {from: caller}); 
+    await config.flightSuretyApp.registerFlight(caller, flight, timestamp, {from: caller});
+    
     //check if flight is registered
-    let result1 = await config.flightSuretyApp.isFlightRegistered(flightNumber); 
+    let result1 = await config.flightSuretyApp.isFlightRegistered(caller, flight, timestamp, {from: caller}); //check if from data works.
     assert(result1,true, "flight could not register correctly");
 
-     //Act - allow user to purchase insurance for a specific flight
-    await config.flightSuretyApp.buy(flightNumber, payment, user1, {from: user1, value: payment});    
+    //Act - allow user to purchase insurance for a specific flight
+    
+    await config.flightSuretyApp.buy(caller, flight, timestamp, payment, user1, {from: user1, value: payment});    
     //check if passenger is registered
     let result3 = await config.flightSuretyData.isPassengerRegistered(user1); //pass in extra parameters. worth?
 

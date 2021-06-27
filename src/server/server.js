@@ -17,6 +17,7 @@ flightSuretyApp.events.OracleRequest({
     console.log(event)
 });
 
+//not necessary, but if you wanted could build an API for a dropdown box for flights.
 const app = express();
 app.get('/api', (req, res) => {
     res.send({

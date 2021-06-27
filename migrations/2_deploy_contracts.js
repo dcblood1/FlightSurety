@@ -11,7 +11,7 @@ module.exports = function(deployer) {
                 .then(() => {
                     let config = {
                         localhost: {
-                            url: 'http://localhost:8545',
+                            url: 'http://localhost:7545', //was 8545 but my ganache is 7545
                             dataAddress: FlightSuretyData.address,
                             appAddress: FlightSuretyApp.address
                         }

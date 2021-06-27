@@ -32,24 +32,28 @@
 # test setting operating status from solo - CHECK
 # once 5 or more, need multi-party consensus on setting operating status and registering new airlines - CHECK
 
-# requirements: passengers -- YOU ARE HERE
+# requirements: passengers -- YOU ARE HERE kinda-> moved to oracles
 # can pay up to 1 eth to participate by buying insurance on a flight.
 # flight numbers and timestamps can be fixed just for this project. Want to list in Dapp client (?? App portion correct?)
 # if flight is delayed, user gets 1.5 x amount paid.
 # funds are transferred only if users initiate a withdraw.
+ 
+# get oracles running & registered - CHECK (done for us)
+# Fetch flight status -> done in code -> need to test.
+# get oracle response -> STRUGGLING TO GET A RESPONSE, THINK THE FLIGHT IS NOT BEING PICKED UP BY THE ORACLES DIFF BTW STRING AND BYTES32?
 
-# general - for multi-party consensus can write it for multipe purposes, not only operational, or only registering.
-# pure is used in data contract, which does not change state, so will need to remove for many functions.
+# oracles 20+ oracles at startup
+# oracles implemented as server app
+# client dapp is used to trigger request to update flight status, generating oracle request event that is captured by server
+# server loops through all registered oracles, identify those for which the request applies, respond with appropriate status code.
+# his suggestion: randomize response codes from oracles in node JS   
 
-# tests are not complete, and will need to modify as needed.
-# oracles.js test will be useful while working on smart contract, but not useful when workign on dapp, will need to switch to server code?
-# truffle test ./test/flightSurety.js -> to test
+# oracles.js test will be useful while working on smart contract, but not useful when workign on dapp, will need to switch to server
 
 # truffle migrate helps you test your dapp
 # creates config.json files in /src/dapp and /src/server from deploy_contracts.js file
 # this sets the contract address to be used, after testing, you'll not want it to change... so can get the address in those files?
 # truffle test changes the addresses
-# client and server development part... idk
 
 
 # FlightSurety

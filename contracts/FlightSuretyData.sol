@@ -159,13 +159,43 @@ contract FlightSuretyData {
                             )
                             external
                             view
-                            returns(bool) //TODO; return other information as well
+                            returns(bool)
     {
-
-        //get flight key
+        //returns true or false
         return flights[key].isRegistered;
-        //TODO: return other information as well.
     }
+    
+    function viewFlightStatus
+                            (
+                                bytes32 key
+                            )
+                            external
+                            view
+                            returns(uint8)
+    {
+        //returns true or false
+        return flights[key].statusCode;
+    }
+
+    function getFlight
+                    (
+                        bytes32 key
+                    ) 
+                    external 
+                    view 
+                    returns ( 
+                    bool isRegistered,
+                    uint8 statusCode, 
+                    uint256 timestamp) {
+        
+        isRegistered = flights[key].isRegistered;
+        statusCode = flights[key].statusCode;
+        timestamp = flights[key].updatedTimestamp;
+
+        return (isRegistered, statusCode, timestamp);
+
+
+                                                            }
 
 
 

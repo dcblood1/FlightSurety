@@ -1,5 +1,5 @@
 var HDWalletProvider = require("truffle-hdwallet-provider");
-var mnemonic = "bounce reunion void frog setup remain gate wise raven unfold motion twice";
+var mnemonic = "detect jealous pipe lonely art parade night casino glide fever peasant piano";
 
 
 module.exports = {

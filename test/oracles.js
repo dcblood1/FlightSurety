@@ -42,23 +42,31 @@ contract('Oracles', async (accounts) => {
     let caller = accounts[0];
     const payment = web3.utils.toWei("1","ether");
     await config.flightSuretyData.fund(caller, {from: caller, value: payment}); //fund airline
-    let flight = web3.utils.asciiToHex("112233"); //strings cannot be passed btw contracts, bc not fixed size.
+    let flight = "1234"; //strings cannot be passed btw contracts, bc not fixed size.
     let timestamp = 1623983777 //Math.floor(Date.now() / 1000);
  
     //register a flight
-    await config.flightSuretyApp.registerFlight(flight, {from: caller}); 
+    await config.flightSuretyApp.registerFlight(caller, flight, timestamp, {from: caller}); 
     
     //check if flight is registered
-    let result1 = await config.flightSuretyApp.isFlightRegistered(flight); 
+    let result1 = await config.flightSuretyApp.isFlightRegistered(caller, flight, timestamp); 
     assert(result1,true, "flight could not register correctly"); 
-    //lets change, how a flight
-
-    //let flight = 'ND1309'; // Course number
+    
     //let timestamp = Math.floor(Date.now() / 1000);
 
     // Submit a request for oracles to get status information for a flight
-    await config.flightSuretyApp.fetchFlightStatus(caller, flight, timestamp);
-    //await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, flight, timestamp);
+    await config.flightSuretyApp.fetchFlightStatus(caller, flight, timestamp, {from: caller});
+    
+    //let result2 = await config.flightSuretyApp.oracleRequestHasOpened(5, caller, flight, timestamp);
+    //let result3 = await config.flightSuretyApp.oracleRequestHasOpened(4, caller, flight, timestamp);
+    //console.log(result2);
+    //console.log(result3);
+    //assert(result2, true, "oracle request not opened");
+    
+    let result4 = await config.flightSuretyApp.getFlight(caller, flight, timestamp, {from: caller});
+    console.log(result4, result4[1].toNumber(), result4[2].toNumber()); //result4 should be bool.
+    
+    
     // ACT
 
     // Since the Index assigned to each test account is opaque by design
@@ -69,21 +77,20 @@ contract('Oracles', async (accounts) => {
 
       // Get oracle information
       let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: accounts[a]});
-      
+      console.log('oracleIndexes' + oracleIndexes);
       for(let idx=0;idx<3;idx++) {
 
         try {
-          // Submit a response...it will only be accepted if there is an Index match
+          // Submit a response, it will only be accepted if there is an Index match
           
           await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], caller, flight, timestamp, 10, { from: accounts[a] });
-          //no events triggered    
-          //EITHER FLIGHT IS NOT CALLED CORRECTLY, AIRLINE NOT 
+          
           
           // Check to see if flight status is available
           // Only useful while debugging since flight status is not hydrated until a 
           // required threshold of oracles submit a response
-          //let flightStatus = await config.flightSuretyApp.viewFlightStatus(flight, timestamp);
-          //console.log('\nPost Flight Status:', idx, oracleIndexes[idx].toNumber(), flight, timestamp, flightStatus);
+          let flightStatus = await config.flightSuretyApp.viewFlightStatus(airline, flight, timestamp);
+          console.log('\nPost Flight Status:', idx, oracleIndexes[idx].toNumber(), flight, timestamp, flightStatus.toNumber());
           
         }
         catch(e) {
@@ -97,6 +104,8 @@ contract('Oracles', async (accounts) => {
       }
     }
 
+    assert(false, true, "this shows the emits, cannot without it.");
+    //anyting I can 
 
   });
 

@@ -32,15 +32,18 @@
 # test setting operating status from solo - CHECK
 # once 5 or more, need multi-party consensus on setting operating status and registering new airlines - CHECK
 
-# requirements: passengers -- YOU ARE HERE kinda-> moved to oracles
+# requirements: passengers
 # can pay up to 1 eth to participate by buying insurance on a flight.
-# flight numbers and timestamps can be fixed just for this project. Want to list in Dapp client (?? App portion correct?)
-# if flight is delayed, user gets 1.5 x amount paid.
+# flight numbers and timestamps can be fixed just for this project.
+
+# YOU AHRE HERE ############################################### - NEED TO FIND A WAY TO DELIVER FUNDS TO PASSENGER
+
+# if flight is delayed, user gets 1.5 x amount paid. - YOU ARE HERE ###########################################
 # funds are transferred only if users initiate a withdraw.
  
-# get oracles running & registered - CHECK (done for us)
-# Fetch flight status -> done in code -> need to test.
-# get oracle response -> STRUGGLING TO GET A RESPONSE, THINK THE FLIGHT IS NOT BEING PICKED UP BY THE ORACLES DIFF BTW STRING AND BYTES32?
+# get oracles running & registered - CHECK
+# Fetch flight status -> CHECK
+# get oracle response -> CHECK
 
 # oracles 20+ oracles at startup
 # oracles implemented as server app

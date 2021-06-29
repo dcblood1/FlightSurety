@@ -229,9 +229,7 @@ contract FlightSuretyApp {
     {
 
         bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
-        emit Log(msg.sender, "Hello World!");
-        emit Log2(msg.sender, key);
-
+        
         //require that flight is not already registered
         require(!flightSuretyData.isFlightRegistered(key), 'app - flight is already registered');
 
@@ -240,7 +238,20 @@ contract FlightSuretyApp {
 
     }
 
-    // I dont want it to have this? does it need to match? 
+
+    function getFlight(address airline, string flight, uint256 timestamp)
+    public 
+    view
+    returns(        bool isRegistered,
+                    uint8 statusCode, 
+                    uint256 updatedTimeStamp)
+    {
+        
+        bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
+        return flightSuretyData.getFlight(key);
+    }
+
+
     function isFlightRegistered
                             (
                                 address airline,
@@ -285,7 +296,6 @@ contract FlightSuretyApp {
         require(isFlightRegistered(airline, flight, timestamp), "App - No flight found at that flight Number");
         
         flightSuretyData.buy(airline, flight, timestamp, amount, passenger); //buy flight insurance
-        //can you not pass string?
         
         if (flightSuretyData.isPassengerRegistered(passenger)) {
             success = true;
@@ -300,7 +310,12 @@ contract FlightSuretyApp {
    /**
     * @dev Called after oracle has updated flight status
     * very important, has to process what happens after a flight status returns. -> only event 20
+    * input: airline, flight, timestamp, statusCode
+    * output: returns uint8 - so returns status code
+    * function: if flight status returns 20, then needs to allow user to transfer funds
     */  
+     
+     // needs to call credit insuree?
     function processFlightStatus
                                 (
                                     address airline,
@@ -309,15 +324,20 @@ contract FlightSuretyApp {
                                     uint8 statusCode
                                 )
                                 internal
-                                pure
-                                //returns (uint8)
+                                returns (uint8)
     {
         //return flights[flight].statusCode;
+        if (statusCode == 20) {
+            return 10;
+        } else {
+            return 0;
+        }
     }
 
     // Query the status of any flight -> used for testing
     function viewFlightStatus
                             (
+                                address airline,
                                 string flight,
                                 uint256 timestamp
                             )
@@ -325,10 +345,10 @@ contract FlightSuretyApp {
                             view
                             returns(uint8)
     {
-            //require(flights[flightKey].isRegistered, "Flight not registered"); //here?? //so... not registered eh??
-
-            //bytes32 flightKey = keccak256(abi.encodePacked(airline, flight, timestamp));
-            //return flights[flightKey].statusCode; //this wont work.
+            require(isFlightRegistered(airline, flight, timestamp), "flight not registered");
+            bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
+            
+            return flightSuretyData.viewFlightStatus(key);
     }
 
 
@@ -341,17 +361,23 @@ contract FlightSuretyApp {
                         )
                         external
     {
+        //generates random index from 0-9
         uint8 index = getRandomIndex(msg.sender);
-
         // Generate a unique key for storing the request
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+        
         oracleResponses[key] = ResponseInfo({
-                                                requester: msg.sender,
+                                                requester: msg.sender, //whos the msg.sender when I'm sending from .js file?
                                                 isOpen: true
                                             });
 
-        emit OracleRequest(index, airline, flight, timestamp); //and this is the problem.
+        emit OracleRequest(index, airline, flight, timestamp); 
     } 
+
+    function oracleRequestHasOpened(uint8 index, address airline, string flight, uint256 timestamp) external view returns (bool) {
+        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+        return oracleResponses[key].isOpen;
+    }
 
 
 // region ORACLE MANAGEMENT
@@ -363,7 +389,7 @@ contract FlightSuretyApp {
     uint256 public constant REGISTRATION_FEE = 1 ether;
 
     // Number of oracles that must respond for valid status
-    uint256 private constant MIN_RESPONSES = 1; //TODO: need to change to 3 or higher number
+    uint256 private constant MIN_RESPONSES = 3;
 
 
 
@@ -419,18 +445,18 @@ contract FlightSuretyApp {
                                     });
     }
 
-    function getOracle
+    function getOracle 
                         (
                             address account
                         )
                         external
                         view
-                        //requireContractOwner
                         returns(bool)
     {
-        return oracles[account].isRegistered; //should be true? why is it not?
+        return oracles[account].isRegistered; 
     }
 
+    //returns the 3 indexes of the oracle that is calling this function
     function getMyIndexes
                             (
                             )
@@ -456,22 +482,25 @@ contract FlightSuretyApp {
     // ensure key is correct of the flight
     // get the status of the flight
     // once enough updates emits even showing the response
+    // sent from oracles.
     function submitOracleResponse
                         (
                             uint8 index,
                             address airline,
-                            string flight, //taking in a string. this not correct? chnage anything?
+                            string flight,
                             uint256 timestamp,
                             uint8 statusCode
                         )
                         external
     {
         
-        require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
-
+        //check if the 3 indexs of the oracle match the request
+        require(((oracles[msg.sender].indexes[0] == index) || oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
+        
+        
         // check key of requested flight
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp)); 
-        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request"); //why??
+        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
+        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
         oracleResponses[key].responses[statusCode].push(msg.sender); //this is not working bc length never increases above 1 in code below
 
@@ -479,12 +508,12 @@ contract FlightSuretyApp {
         // oracles respond with the *** same *** information
         
         emit OracleReport(airline, flight, timestamp, statusCode); 
-        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) { //with min responses set to 1 still not reading.
+        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) { 
 
-            emit FlightStatusInfo(airline, flight, timestamp, statusCode); //this will show?
+            emit FlightStatusInfo(airline, flight, timestamp, statusCode); 
 
             // Handle flight status as appropriate
-            processFlightStatus(airline, flight, timestamp, statusCode);
+            processFlightStatus(airline, flight, timestamp, statusCode); 
         }
     }
 
@@ -560,11 +589,13 @@ function isPassengerRegistered(address account) external view returns(bool);
 function hasAirlinePaid(address account) external view returns(bool);
 function registerAirline(address account, bool hasFunded) external;
 function registerFlight(bytes32 flightKey, address airline, uint256 timestamp) external;
-function buy(address airline, bytes32 flight, uint256 timestamp, uint8 amount, address account) public payable;  
+function buy(address airline, string flight, uint256 timestamp, uint8 amount, address account) public payable;  
 function isOperational() view returns(bool);
 function setOperatingStatus(bool mode) external;
 function getNumberOfApprovedAirlines() external view returns (uint256);
 function isFlightRegistered(bytes32 key) public view returns (bool);
 function getFlightKey(address airline, string flight, uint256 timestamp) public view returns (bytes32);
+function getFlight(bytes32 key) external view returns(bool isRegistered,uint8 statusCode, uint256 updatedTimeStamp);
+function viewFlightStatus(bytes32 key) external view returns (uint8);
 
 }

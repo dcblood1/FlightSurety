@@ -25,7 +25,12 @@ contract FlightSuretyData {
         uint8 statusCode;
         uint256 updatedTimestamp;        
         address airline;
+        mapping(address => Passenger) onBoardPassengers; // will this work? can I see what passengers are there? surely I can...
+        //TODO: see if this mapping works.
+        al;skdjflaksdjfklajsdf;lkajsdf
     }
+    
+
     
     struct Passenger{
         address airline;
@@ -33,6 +38,7 @@ contract FlightSuretyData {
         bool isRegistered;
         string flightNumber;
         uint8 paidAmount;
+        uint8 creditAmount;
     }
 
     mapping(address => Passenger) private passengers; // mapping of address to passenger profiles
@@ -373,6 +379,9 @@ contract FlightSuretyData {
             isRegistered: true
         });
         
+        //TODO: then add passenger to the flight struct, in passenger
+        flights[key].passenger[]
+        
 
     }
 
@@ -380,25 +389,45 @@ contract FlightSuretyData {
      *  @dev Credits payouts to insurees
      * input: user account number, 
      * amount to give back * input amount
+     * // so this just puts the number in their account.
     */
     function creditInsurees
                                 (
+                                    address passengerAccount
                                 )
                                 external
-                                pure
+                                returns(uint8 creditAmount)
+                                
     {
+        
+        
+        uint8 amount = passengers[passengerAccount].paidAmount; 
+        require(amount >0, "amount paid must be greater than 0");
+
+        //function: cannot do 1.5, so muliply by 3, divide by 2.
+        uint8 amt = SafeMath.mul(amount, 3);
+        uint8 creditAmount = SafeMath.div(amt, 2);
+        passengers[passengerAccount].paidAmount = 0; // set the paid amount to 0, then credit their account
+        passengers[passengerAccount].creditAmount = creditAmount;
+        
+        // return amount credited to their account
+        return creditAmount; 
+
+        
+
     }
     
 
     /**
      *  @dev Transfers eligible payout funds to insuree
+     * called by passenger to get funds out.
      *
     */
     function pay
                             (
                             )
                             external
-                            pure
+                            
     {
     }
 

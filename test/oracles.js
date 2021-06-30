@@ -104,8 +104,8 @@ contract('Oracles', async (accounts) => {
       }
     }
 
-    assert(false, true, "this shows the emits, cannot without it.");
-    //anyting I can 
+    assert(true, true, "this shows the emits, dont know how to test without it.");
+    
 
   });
 

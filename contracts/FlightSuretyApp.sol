@@ -36,6 +36,7 @@ contract FlightSuretyApp {
         uint256 updatedTimestamp;        
         address airline;
     }
+    // need to save flight, and all the passengers on it? how do we do it? is it checked or per passenger?
     mapping(bytes32 => Flight) private flights;
 
     address[] multiCalls = new address[](0); // used to track all addresses that call consensus on operating status
@@ -316,6 +317,7 @@ contract FlightSuretyApp {
     */  
      
      // needs to call credit insuree?
+     // it saves the flight as a status... I don't understand it completely...
     function processFlightStatus
                                 (
                                     address airline,
@@ -323,14 +325,30 @@ contract FlightSuretyApp {
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
-                                internal
+                                internal  //need to be internal?
                                 returns (uint8)
     {
-        //return flights[flight].statusCode;
+        
         if (statusCode == 20) {
-            return 10;
+            //find flight key
+            bytes32 key = getFlightKey(airline, flight, timestamp);
+            
+            //NEXT STEPS: 
+            // SAVE PASSENGERS ONTO FLIGHT IN A MAPPING
+            // THEN ONCE STATUS IS PROCESSES.
+            // GOES THROUGH ALL PASSENGERS IF POSSIBLE
+            // AND CREDITS THEIR ACCOUNTS.
+            
+            // GET FLIGHT KEY
+            // GET PASSENGERS ON FLIGHT
+            // CREDIT ACCOUNT
+            
+            
+            // need to credit the users account
+            
+            flightSuretyData.creditInsurees(account); //what account...
         } else {
-            return 0;
+            
         }
     }
 
@@ -390,7 +408,6 @@ contract FlightSuretyApp {
 
     // Number of oracles that must respond for valid status
     uint256 private constant MIN_RESPONSES = 3;
-
 
 
     struct Oracle {
@@ -528,9 +545,7 @@ contract FlightSuretyApp {
                         external //want it to be internal I guess so change after testing? //just call data
                         returns(bytes32) 
     {
-        //why doesn't this call data?
-        //does this even exist?
-        // guess it returns
+        
         return flightSuretyData.getFlightKey(airline, flight, timestamp);
     }
 
@@ -597,5 +612,6 @@ function isFlightRegistered(bytes32 key) public view returns (bool);
 function getFlightKey(address airline, string flight, uint256 timestamp) public view returns (bytes32);
 function getFlight(bytes32 key) external view returns(bool isRegistered,uint8 statusCode, uint256 updatedTimeStamp);
 function viewFlightStatus(bytes32 key) external view returns (uint8);
+function creditInsurees(address account) external returns(uint8);
 
 }

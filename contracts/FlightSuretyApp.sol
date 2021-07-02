@@ -332,11 +332,17 @@ contract FlightSuretyApp {
         if (statusCode == 20) {
             //find flight key
             bytes32 key = getFlightKey(airline, flight, timestamp);
-            
             //NEXT STEPS: 
-            // SAVE PASSENGERS ONTO FLIGHT IN A MAPPING
+            // SAVE PASSENGERS ONTO FLIGHT IN A MAPPING - check
             // THEN ONCE STATUS IS PROCESSES.
-            // GOES THROUGH ALL PASSENGERS IF POSSIBLE
+            // GOES THROUGH ALL PASSENGERS
+            for(uint c=0; c<flightSuretyData.getOnBoardPassengers(key).length; c++) {
+            //do something to them here...
+            //emit Log(flights[key].onBoardPassengers[c]);
+            emit Log(msg.sender, "all the passengers");
+            
+            //add them to a different list? or change their profile?
+        }
             // AND CREDITS THEIR ACCOUNTS.
             
             // GET FLIGHT KEY
@@ -346,9 +352,14 @@ contract FlightSuretyApp {
             
             // need to credit the users account
             
-            flightSuretyData.creditInsurees(account); //what account...
-        } else {
+            //flightSuretyData.creditInsurees(account); //what account... need to get from list of passengers on flight.
             
+            return 1;
+        } else {
+            // do something else
+            emit Log(msg.sender, "not the right status - not 20");
+
+            return 0;
         }
     }
 
@@ -441,7 +452,7 @@ contract FlightSuretyApp {
     // they fetch data and submit a response
     event OracleRequest(uint8 index, address airline, string flight, uint256 timestamp);
     event Log(address indexed sender, string message); //TODO delete
-    event Log2(address indexed sender, bytes32 message);
+    event Log2(address indexed sender, bytes32 message); //TODO delete
 
 
     // Register an oracle with the contract
@@ -523,7 +534,7 @@ contract FlightSuretyApp {
 
         // Information isn't considered verified until at least MIN_RESPONSES
         // oracles respond with the *** same *** information
-        
+        emit Log(msg.sender, "wooooooo");
         emit OracleReport(airline, flight, timestamp, statusCode); 
         if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) { 
 
@@ -542,7 +553,7 @@ contract FlightSuretyApp {
                             uint256 timestamp
                         )
                         
-                        external //want it to be internal I guess so change after testing? //just call data
+                        internal //want it to be internal I guess so change after testing? //just call data
                         returns(bytes32) 
     {
         
@@ -613,5 +624,6 @@ function getFlightKey(address airline, string flight, uint256 timestamp) public 
 function getFlight(bytes32 key) external view returns(bool isRegistered,uint8 statusCode, uint256 updatedTimeStamp);
 function viewFlightStatus(bytes32 key) external view returns (uint8);
 function creditInsurees(address account) external returns(uint8);
+function getOnBoardPassengers(bytes32 key) external view returns(address[]);
 
 }

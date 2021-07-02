@@ -25,9 +25,7 @@ contract FlightSuretyData {
         uint8 statusCode;
         uint256 updatedTimestamp;        
         address airline;
-        mapping(address => Passenger) onBoardPassengers; // will this work? can I see what passengers are there? surely I can...
-        //TODO: see if this mapping works.
-        al;skdjflaksdjfklajsdf;lkajsdf
+        address[] onBoardPassengers;
     }
     
 
@@ -183,6 +181,20 @@ contract FlightSuretyData {
         return flights[key].statusCode;
     }
 
+    function getOnBoardPassengers
+                            (
+                                bytes32 key
+
+                            )
+                            external
+                            view
+                            returns (
+                                address[]
+                            ) 
+                            {                                
+                                return flights[key].onBoardPassengers; 
+                            }
+
     function getFlight
                     (
                         bytes32 key
@@ -192,13 +204,15 @@ contract FlightSuretyData {
                     returns ( 
                     bool isRegistered,
                     uint8 statusCode, 
-                    uint256 timestamp) {
+                    uint256 timestamp,
+                    address[] passengers) {
         
         isRegistered = flights[key].isRegistered;
         statusCode = flights[key].statusCode;
         timestamp = flights[key].updatedTimestamp;
+        passengers = flights[key].onBoardPassengers;
 
-        return (isRegistered, statusCode, timestamp);
+        return (isRegistered, statusCode, timestamp, passengers);
 
 
                                                             }
@@ -333,12 +347,18 @@ contract FlightSuretyData {
 
     {
         //register the flight
-        flights[flightKey] = Flight({
-            isRegistered: true,
-            statusCode:10,
-            updatedTimestamp: timestamp,
-            airline: airline
-        });
+        //flights[flightKey] = Flight({
+        //    isRegistered: true,
+        //    statusCode:10,
+        //    updatedTimestamp: timestamp,
+        //    airline: airline
+        //});
+
+        flights[flightKey].isRegistered = true;
+        flights[flightKey].statusCode = 10;
+        flights[flightKey].updatedTimestamp = timestamp;
+        flights[flightKey].airline = airline;
+        
     }
 
 
@@ -370,17 +390,19 @@ contract FlightSuretyData {
         bool sent = address(this).send(msg.value); 
         require(sent, "failed to send ether");
         bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
+        //bytes32 key = getFlightKey(airline, flight, timestamp);
         
         passengers[passenger] = Passenger({
             airline: airline,
             flightNumber: flight,
             flightKey: key,
             paidAmount: amount,
-            isRegistered: true
+            isRegistered: true,
+            creditAmount: 0
         });
         
-        //TODO: then add passenger to the flight struct, in passenger
-        flights[key].passenger[]
+        //TODO: then add passenger to the flights onBoardPassengers mapping
+        flights[key].onBoardPassengers.push(passenger);
         
 
     }
@@ -390,7 +412,7 @@ contract FlightSuretyData {
      * input: user account number, 
      * amount to give back * input amount
      * // so this just puts the number in their account.
-    */
+    
     function creditInsurees
                                 (
                                     address passengerAccount
@@ -416,7 +438,7 @@ contract FlightSuretyData {
         
 
     }
-    
+    */
 
     /**
      *  @dev Transfers eligible payout funds to insuree
@@ -460,7 +482,7 @@ contract FlightSuretyData {
 
     function getFlightKey
                         (
-                            address airline,
+                            address airline, 
                             string flight, // was string memory flight - I changed it...
                             uint256 timestamp
                         )

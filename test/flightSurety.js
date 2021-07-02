@@ -199,6 +199,10 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyApp.buy(caller, flight, timestamp, payment, user1, {from: user1, value: payment});    
     //check if passenger is registered
     let result3 = await config.flightSuretyData.isPassengerRegistered(user1); //pass in extra parameters. worth?
+    // see if flight returns with list of passengers
+
+    //check if you can get the list of passengers.
+    
 
     //Assert
     assert(result3, true, "user1 could not buy flight insurance")

@@ -35,8 +35,8 @@ contract FlightSuretyData {
         bytes32 flightKey;
         bool isRegistered;
         string flightNumber;
-        uint8 paidAmount;
-        uint8 creditAmount;
+        uint256 paidAmount;
+        uint256 creditAmount;
     }
 
     mapping(address => Passenger) private passengers; // mapping of address to passenger profiles
@@ -46,6 +46,9 @@ contract FlightSuretyData {
     uint256 public constant AirlineRegistrationFee = 1 ether; //TODO NEED TO CHANGE TO 10 ETHER #####################################
     uint256 public constant maxInsuranceAmount = 1 ether;
     address[] approvedAirlines; //can see which airlines addresses are approved, and add 
+
+    event Log3(address indexed sender, string message); //TODO delete
+    event Log4(address sender, uint256 amount);
     
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -237,6 +240,26 @@ contract FlightSuretyData {
         return passengers[account].isRegistered;
     }
 
+    function getPassengerPaidAmount(address account) external view returns (uint256) {
+        require(account != address(0), "'account' must be a valid address.");
+        
+        return passengers[account].paidAmount;
+    }
+
+    function getPassengerCreditAmount
+                                (
+                                    address account
+                                )
+                                external
+                                view
+                                returns(uint256)
+                                {
+        require(account != address(0), "'account' must be a valid address.");
+        
+        return passengers[account].creditAmount;
+                                }
+                                
+
    /**
     * @dev Check if an airline has funded the contract
     *
@@ -361,6 +384,20 @@ contract FlightSuretyData {
         
     }
 
+    function changeFlightStatus 
+                                (
+                                    bytes32 key,
+                                    uint8 statusCode
+                                )
+                                external
+                                requireIsOperational()
+    {
+    
+        require(flights[key].isRegistered, "flight not registered");
+        flights[key].statusCode = statusCode;
+
+    }                            
+
 
 
    /**
@@ -375,7 +412,7 @@ contract FlightSuretyData {
                                 address airline,
                                 string flight,
                                 uint256 timestamp,
-                                uint8 amount,
+                                uint256 amount,
                                 address passenger                             
                             )
                             external //called externally from another contract
@@ -384,13 +421,13 @@ contract FlightSuretyData {
     {
 
         //ensure amount is less than one eth
-        require(msg.value < maxInsuranceAmount, "Max of One ether allowed, submit less.");
+        require(amount <= maxInsuranceAmount, "Max of One ether allowed, submit less than one.");
         
         //first send transaction        
         bool sent = address(this).send(msg.value); 
         require(sent, "failed to send ether");
         bytes32 key = keccak256(abi.encodePacked(airline, flight, timestamp));
-        //bytes32 key = getFlightKey(airline, flight, timestamp);
+        
         
         passengers[passenger] = Passenger({
             airline: airline,
@@ -401,7 +438,7 @@ contract FlightSuretyData {
             creditAmount: 0
         });
         
-        //TODO: then add passenger to the flights onBoardPassengers mapping
+        //Add passenger to the flights onBoardPassengers mapping
         flights[key].onBoardPassengers.push(passenger);
         
 
@@ -412,33 +449,28 @@ contract FlightSuretyData {
      * input: user account number, 
      * amount to give back * input amount
      * // so this just puts the number in their account.
-    
+    */
     function creditInsurees
                                 (
                                     address passengerAccount
                                 )
                                 external
-                                returns(uint8 creditAmount)
                                 
     {
         
-        
-        uint8 amount = passengers[passengerAccount].paidAmount; 
-        require(amount >0, "amount paid must be greater than 0");
+        //emit Log3(msg.sender, 'in credit Insuree');
+        require(passengers[passengerAccount].isRegistered, "passenger is not registered");
+        uint256 amount = passengers[passengerAccount].paidAmount; 
+        require(amount > 0, "amount paid must be greater than 0"); //why is the amount 0?
 
         //function: cannot do 1.5, so muliply by 3, divide by 2.
-        uint8 amt = SafeMath.mul(amount, 3);
-        uint8 creditAmount = SafeMath.div(amt, 2);
+        uint256 amt = SafeMath.mul(amount, 3);
+        uint256 creditAmount = SafeMath.div(amt, 2);
         passengers[passengerAccount].paidAmount = 0; // set the paid amount to 0, then credit their account
-        passengers[passengerAccount].creditAmount = creditAmount;
-        
-        // return amount credited to their account
-        return creditAmount; 
-
-        
-
+        passengers[passengerAccount].creditAmount = creditAmount; 
+            
     }
-    */
+    
 
     /**
      *  @dev Transfers eligible payout funds to insuree
@@ -484,6 +516,7 @@ contract FlightSuretyData {
                         (
                             address airline, 
                             string flight, // was string memory flight - I changed it...
+                            
                             uint256 timestamp
                         )
                         external

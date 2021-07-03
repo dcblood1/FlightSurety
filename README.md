@@ -36,12 +36,8 @@
 # can pay up to 1 eth to participate by buying insurance on a flight.
 # flight numbers and timestamps can be fixed just for this project.
 
-# YOU ARE HERE ############################################### - NEED TO FIND A WAY TO DELIVER FUNDS TO PASSENGER
-
-# if flight is delayed, user gets 1.5 x amount paid. - YOU ARE HERE ###########################################
+# if flight is delayed, user gets 1.5 x amount paid.
 # funds are transferred only if users initiate a withdraw.
-#  NEED TO SAVE ALL PASSENGERS TO A FLIGHT. THEN ONCE FLIGHT STATUS CLEARS, CREDIT AN AMOUNT TO EACH PASSENGER IN A FOR LOOP.
-# need to 
  
 # get oracles running & registered - CHECK
 # Fetch flight status -> CHECK

@@ -40,7 +40,11 @@ contract('Oracles', async (accounts) => {
     
     // ARRANGE
     let caller = accounts[0];
+    let passenger1 = accounts[10];
+    let passenger2 = accounts[11];
+    let passenger3 = accounts[12];
     const payment = web3.utils.toWei("1","ether");
+    const credit = web3.utils.toWei("1.5","ether");
     await config.flightSuretyData.fund(caller, {from: caller, value: payment}); //fund airline
     let flight = "1234"; //strings cannot be passed btw contracts, bc not fixed size.
     let timestamp = 1623983777 //Math.floor(Date.now() / 1000);
@@ -48,25 +52,33 @@ contract('Oracles', async (accounts) => {
     //register a flight
     await config.flightSuretyApp.registerFlight(caller, flight, timestamp, {from: caller}); 
     
+    
     //check if flight is registered
     let result1 = await config.flightSuretyApp.isFlightRegistered(caller, flight, timestamp); 
-    assert(result1,true, "flight could not register correctly"); 
-    
+    assert.equal(result1,true, "flight could not register correctly"); 
     //let timestamp = Math.floor(Date.now() / 1000);
 
     // Submit a request for oracles to get status information for a flight
     await config.flightSuretyApp.fetchFlightStatus(caller, flight, timestamp, {from: caller});
     
-    //let result2 = await config.flightSuretyApp.oracleRequestHasOpened(5, caller, flight, timestamp);
-    //let result3 = await config.flightSuretyApp.oracleRequestHasOpened(4, caller, flight, timestamp);
-    //console.log(result2);
-    //console.log(result3);
-    //assert(result2, true, "oracle request not opened");
+    //change flight status to 20 - one that credits insurees.
+    await config.flightSuretyApp.changeFlightStatus(caller, flight, timestamp, 20, {from: caller});
+
+
+    //let result4 = await config.flightSuretyApp.getFlight(caller, flight, timestamp, {from: caller});
+    //console.log(result4, result4[1].toNumber(), result4[2].toNumber()); //result4 should be bool.
     
-    let result4 = await config.flightSuretyApp.getFlight(caller, flight, timestamp, {from: caller});
-    console.log(result4, result4[1].toNumber(), result4[2].toNumber()); //result4 should be bool.
+    //3 passengers buy the flight
+    await config.flightSuretyApp.buy(caller, flight, timestamp, payment, passenger1, {from: passenger1, value: payment});
+    await config.flightSuretyApp.buy(caller, flight, timestamp, payment, passenger2, {from: passenger2, value: payment});
+    await config.flightSuretyApp.buy(caller, flight, timestamp, payment, passenger3, {from: passenger3, value: payment});
+    //console.log('passenger1 bought: ' + success1);
+    //assert.equal(success1, true, "passenger1 bought");
+    //assert.equal(success2, true, "passenger2 bought");
+    //assert.equal(success3, true, "passenger3 bought");
     
-    
+
+
     // ACT
 
     // Since the Index assigned to each test account is opaque by design
@@ -77,13 +89,12 @@ contract('Oracles', async (accounts) => {
 
       // Get oracle information
       let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: accounts[a]});
-      console.log('oracleIndexes' + oracleIndexes);
       for(let idx=0;idx<3;idx++) {
 
         try {
           // Submit a response, it will only be accepted if there is an Index match
           
-          await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], caller, flight, timestamp, 10, { from: accounts[a] });
+          await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], caller, flight, timestamp, 20, { from: accounts[a] });
           
           
           // Check to see if flight status is available
@@ -104,11 +115,18 @@ contract('Oracles', async (accounts) => {
       }
     }
 
-    assert(true, false, "this shows the emits, dont know how to test without it.");
-    assert(1,2, "false freaking false");
+    let result6 = await config.flightSuretyData.getPassengerCreditAmount(passenger1);
+    let result7 = await config.flightSuretyData.getPassengerCreditAmount(passenger2);
+    let result8 = await config.flightSuretyData.getPassengerCreditAmount(passenger3);
+    console.log('credit Amount: ' + result8.toString());
     
+    assert.equal(result6.toString(), credit.toString(), "did not credit correct amount - passenger 1");
+    assert.equal(result7.toString(), credit.toString(), "did not credit correct amount - passenger 2");
+    assert.equal(result8.toString(), credit.toString(), "did not credit correct amount - passenger 3");
     
-
+    assert.equal(true, false, "this shows the emits, dont know how to show without it.");
+    //assert.equal(1,2, "false freaking false");
+    
   });
 
 

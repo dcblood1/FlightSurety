@@ -239,6 +239,14 @@ contract FlightSuretyApp {
 
     }
 
+    function changeFlightStatus(address airline, string flight, uint256 timestamp, uint8 statusCode) public {
+        
+        
+        bytes32 key = flightSuretyData.getFlightKey(airline, flight, timestamp);
+        flightSuretyData.changeFlightStatus(key, statusCode);
+        
+    }
+
 
     function getFlight(address airline, string flight, uint256 timestamp)
     public 
@@ -281,7 +289,7 @@ contract FlightSuretyApp {
                                 address airline,
                                 string flight,
                                 uint256 timestamp,
-                                uint8 amount,
+                                uint256 amount,
                                 address passenger                         
                             )
                             public //called externally from another contract
@@ -292,7 +300,7 @@ contract FlightSuretyApp {
         //check flight is legit
 
         //then call data
-        require(msg.value <= maxInsuranceAmount, "App - Max of One ether allowed, submit less.");
+        require(amount <= maxInsuranceAmount, "App - Max of One ether allowed, submit less.");
         
         require(isFlightRegistered(airline, flight, timestamp), "App - No flight found at that flight Number");
         
@@ -315,9 +323,6 @@ contract FlightSuretyApp {
     * output: returns uint8 - so returns status code
     * function: if flight status returns 20, then needs to allow user to transfer funds
     */  
-     
-     // needs to call credit insuree?
-     // it saves the flight as a status... I don't understand it completely...
     function processFlightStatus
                                 (
                                     address airline,
@@ -325,40 +330,29 @@ contract FlightSuretyApp {
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
-                                internal  //need to be internal?
+                                internal
                                 returns (uint8)
     {
-        
+        emit Log(msg.sender, "before the if");
         if (statusCode == 20) {
             //find flight key
-            bytes32 key = getFlightKey(airline, flight, timestamp);
-            //NEXT STEPS: 
-            // SAVE PASSENGERS ONTO FLIGHT IN A MAPPING - check
-            // THEN ONCE STATUS IS PROCESSES.
-            // GOES THROUGH ALL PASSENGERS
+            bytes32 key = flightSuretyData.getFlightKey(airline, flight, timestamp);
+            address[] memory passengers = flightSuretyData.getOnBoardPassengers(key);
+            //loop through passengers
             for(uint c=0; c<flightSuretyData.getOnBoardPassengers(key).length; c++) {
-            //do something to them here...
-            //emit Log(flights[key].onBoardPassengers[c]);
-            emit Log(msg.sender, "all the passengers");
             
-            //add them to a different list? or change their profile?
+                emit Log(msg.sender, "all the passengers");
+                address passenger = passengers[c]; //gets the passenger address.
+                flightSuretyData.creditInsurees(passenger);  //doesn't like this for some reason.
+                emit Log(msg.sender, "after credit - does it fail?");
+            
         }
-            // AND CREDITS THEIR ACCOUNTS.
-            
-            // GET FLIGHT KEY
-            // GET PASSENGERS ON FLIGHT
-            // CREDIT ACCOUNT
-            
-            
-            // need to credit the users account
-            
-            //flightSuretyData.creditInsurees(account); //what account... need to get from list of passengers on flight.
-            
+
+            emit Log(msg.sender, "after for loop");
             return 1;
         } else {
-            // do something else
+            //incorrect status for payout
             emit Log(msg.sender, "not the right status - not 20");
-
             return 0;
         }
     }
@@ -523,18 +517,17 @@ contract FlightSuretyApp {
     {
         
         //check if the 3 indexs of the oracle match the request
-        require(((oracles[msg.sender].indexes[0] == index) || oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
+        require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
         
         
         // check key of requested flight
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
         require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
-        oracleResponses[key].responses[statusCode].push(msg.sender); //this is not working bc length never increases above 1 in code below
+        oracleResponses[key].responses[statusCode].push(msg.sender);
 
         // Information isn't considered verified until at least MIN_RESPONSES
         // oracles respond with the *** same *** information
-        emit Log(msg.sender, "wooooooo");
         emit OracleReport(airline, flight, timestamp, statusCode); 
         if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) { 
 
@@ -615,7 +608,7 @@ function isPassengerRegistered(address account) external view returns(bool);
 function hasAirlinePaid(address account) external view returns(bool);
 function registerAirline(address account, bool hasFunded) external;
 function registerFlight(bytes32 flightKey, address airline, uint256 timestamp) external;
-function buy(address airline, string flight, uint256 timestamp, uint8 amount, address account) public payable;  
+function buy(address airline, string flight, uint256 timestamp, uint256 amount, address account) public payable;  
 function isOperational() view returns(bool);
 function setOperatingStatus(bool mode) external;
 function getNumberOfApprovedAirlines() external view returns (uint256);
@@ -623,7 +616,8 @@ function isFlightRegistered(bytes32 key) public view returns (bool);
 function getFlightKey(address airline, string flight, uint256 timestamp) public view returns (bytes32);
 function getFlight(bytes32 key) external view returns(bool isRegistered,uint8 statusCode, uint256 updatedTimeStamp);
 function viewFlightStatus(bytes32 key) external view returns (uint8);
-function creditInsurees(address account) external returns(uint8);
+function creditInsurees(address account) external;
 function getOnBoardPassengers(bytes32 key) external view returns(address[]);
+function changeFlightStatus(bytes32 key, uint8 statusCode) external;
 
 }

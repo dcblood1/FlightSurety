@@ -124,7 +124,7 @@ contract('Oracles', async (accounts) => {
     assert.equal(result7.toString(), credit.toString(), "did not credit correct amount - passenger 2");
     assert.equal(result8.toString(), credit.toString(), "did not credit correct amount - passenger 3");
     
-    assert.equal(true, false, "this shows the emits, dont know how to show without it.");
+    //assert.equal(true, false, "this shows the emits, dont know how to show without it.");
     //assert.equal(1,2, "false freaking false");
     
   });

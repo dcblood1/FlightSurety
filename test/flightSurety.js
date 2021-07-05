@@ -184,8 +184,8 @@ contract('Flight Surety Tests', async (accounts) => {
     let user1 = accounts[9];
     let user2 = accounts[10];
     let caller = accounts[0];
-    let flight = "1234"; //strings cannot be passed btw contracts, bc not fixed size.
-    const payment = web3.utils.toWei("1","ether"); //I dont understand
+    let flight = "1234"; 
+    const payment = web3.utils.toWei("1","ether");
     const credit = web3.utils.toWei("1.5", "ether");
     console.log('payment: ' + payment);
     let timestamp = 631432800;
@@ -206,22 +206,31 @@ contract('Flight Surety Tests', async (accounts) => {
     let result5 = await config.flightSuretyData.isPassengerRegistered(user2);
     console.log('is passenger registered - should be false: ' + result5);
     let result6 = await config.flightSuretyData.getPassengerPaidAmount(user1);
-    console.log('did passenger pay: ' + result6.toString());  
-    
-    
+    console.log('did passenger pay - paid amount: ' + result6.toString());  
 
     //want to test credit insurees
     await config.flightSuretyData.creditInsurees(user1);
     let result4 = await config.flightSuretyData.getPassengerCreditAmount(user1); 
     console.log('credit amount: ' + result4.toString());
     let result7 = await config.flightSuretyData.getPassengerPaidAmount(user1);
-    console.log('after credit, paid should be 0: ' + result7.toString()); 
+    console.log('paid amount after credit, paid should be 0: ' + result7.toString()); 
+
+    //can withdraw money after credit
+    let userBeforeCreditPay = await web3.eth.getBalance(user1);
+    console.log('user value before credit transfer: ' + userBeforeCreditPay);
     
+    await config.flightSuretyApp.payInsuree.sendTransaction({from: user1}); 
+
+    let userAfterCreditPay = await web3.eth.getBalance(user1);
+    console.log('user value after credit transfer: ' + userAfterCreditPay);
+
 
     //Assert
     assert.equal(result3, true, "user1 could not buy flight insurance")
     assert.equal(result4.toString(), credit.toString(), "credit amount is not correct");
+    
   });
+
 
 
 

@@ -315,6 +315,12 @@ contract FlightSuretyApp {
         return success;
 
     }
+
+    //pay insuree
+    function payInsuree() public {
+
+        flightSuretyData.pay(msg.sender); 
+    }
     
    /**
     * @dev Called after oracle has updated flight status
@@ -619,5 +625,6 @@ function viewFlightStatus(bytes32 key) external view returns (uint8);
 function creditInsurees(address account) external;
 function getOnBoardPassengers(bytes32 key) external view returns(address[]);
 function changeFlightStatus(bytes32 key, uint8 statusCode) external;
+function pay(address passengerAccount) public; 
 
 }

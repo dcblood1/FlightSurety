@@ -479,10 +479,23 @@ contract FlightSuretyData {
     */
     function pay
                             (
+                                address passengerAccount
                             )
-                            external
+                            public
                             
     {
+        //msg.sender works here? Passes through right?
+        //checks
+        require(passengers[passengerAccount].creditAmount > 0, "insufficient funds - none there");
+
+        //effects
+        uint256 amt = passengers[passengerAccount].creditAmount; //set local var to amount
+        passengers[passengerAccount].creditAmount = 0; //set credit amount to 0
+
+        //interaction
+        passengerAccount.transfer(amt);  //send amount? this not working?
+        
+        
     }
 
    /**

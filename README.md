@@ -49,12 +49,39 @@
 # server loops through all registered oracles, identify those for which the request applies, respond with appropriate status code.
 # his suggestion: randomize response codes from oracles in node JS   
 
+
+
+
 # oracles.js test will be useful while working on smart contract, but not useful when workign on dapp, will need to switch to server
 
 # truffle migrate helps you test your dapp
 # creates config.json files in /src/dapp and /src/server from deploy_contracts.js file
+# will need to use truffle migrate --reset (like we've been doing).
+
+
+
+### WORKING ON DAPP PORTION
+# when doing new ganache - 
+# set up new. 
+# change memonic in truffle-config
+# update first airline in deploy_contracts.js
+# truffle migrate --reset
+# npm Run dapp
+
+
+# dapp ----------------- YOU ARE HERE ------ UNDERSTAND HOW THOSE 3 FILES WORK TOGETHER.
+# index.html, has one read and write functions you can use for everything else.
+# index.js - proxy into actual contract - wrapper functions. Can call smart contract functions
+#       triggers to call the oracle servers in src/server portion.
+# contract.js - boilerplate to interact with the contract. 
+# index.js calls contract.js, displays it in index.html? I believe
+# look in package.json and can see other scripts to run
+
+# server.js is where we need to do the rest of the oracle work.
+
 # this sets the contract address to be used, after testing, you'll not want it to change... so can get the address in those files?
 # truffle test changes the addresses
+
 
 
 # FlightSurety

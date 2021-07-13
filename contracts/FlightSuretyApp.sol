@@ -86,6 +86,13 @@ contract FlightSuretyApp {
     {
         contractOwner = msg.sender;
         flightSuretyData = FlightSuretyData(dataContract);
+
+        //can I create flights right here? in the contract...
+        // airline, flight, timestamp
+        registerFlight(0x0a3C0fd8Ab766C5e43f341Dd91C36f354f11FD71, '010490', 631432800);
+        registerFlight(0xa9685D7e2C957BB032d9D47256f794633418C67A, '020791', 665906400);
+        registerFlight(0x0a3C0fd8Ab766C5e43f341Dd91C36f354f11FD71, '101191', 687157200);
+
     }
 
     /********************************************************************************************/
@@ -225,7 +232,7 @@ contract FlightSuretyApp {
                                     uint256 timestamp
                                 )
                                 requireIsOperational()
-                                external //must be external for transactions  
+                                public //must be external for transactions  
                                 
     {
 
@@ -396,11 +403,11 @@ contract FlightSuretyApp {
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
         
         oracleResponses[key] = ResponseInfo({
-                                                requester: msg.sender, //whos the msg.sender when I'm sending from .js file?
+                                                requester: msg.sender,
                                                 isOpen: true
                                             });
 
-        emit OracleRequest(index, airline, flight, timestamp); 
+        emit OracleRequest(index, airline, flight, timestamp);
     } 
 
     function oracleRequestHasOpened(uint8 index, address airline, string flight, uint256 timestamp) external view returns (bool) {
@@ -615,7 +622,7 @@ function hasAirlinePaid(address account) external view returns(bool);
 function registerAirline(address account, bool hasFunded) external;
 function registerFlight(bytes32 flightKey, address airline, uint256 timestamp) external;
 function buy(address airline, string flight, uint256 timestamp, uint256 amount, address account) public payable;  
-function isOperational() view returns(bool);
+function isOperational() public view returns(bool);
 function setOperatingStatus(bool mode) external;
 function getNumberOfApprovedAirlines() external view returns (uint256);
 function isFlightRegistered(bytes32 key) public view returns (bool);

@@ -4,10 +4,10 @@ const fs = require('fs');
 
 module.exports = function(deployer) {
 
-    let firstAirline = '0xf17f52151EbEF6C7334FAD080c5704D77216b732'; 
+    let firstAirline = '0x0a3C0fd8Ab766C5e43f341Dd91C36f354f11FD71';  //change each time with new ganache
     deployer.deploy(FlightSuretyData)
     .then(() => {
-        return deployer.deploy(FlightSuretyApp, firstAirline) // is this what configures and allows us to run the tests?
+        return deployer.deploy(FlightSuretyApp, FlightSuretyData.address) // look at your constructor - took away firstAirline, added data.address
                 .then(() => {
                     let config = {
                         localhost: {
@@ -16,7 +16,7 @@ module.exports = function(deployer) {
                             appAddress: FlightSuretyApp.address
                         }
                     }
-                    fs.writeFileSync(__dirname + '/../src/dapp/config.json',JSON.stringify(config, null, '\t'), 'utf-8');
+                    fs.writeFileSync(__dirname + '/../src/dapp/config.json',JSON.stringify(config, null, '\t'), 'utf-8'); // this creates the config.json file in dapp and server
                     fs.writeFileSync(__dirname + '/../src/server/config.json',JSON.stringify(config, null, '\t'), 'utf-8');
                 });
     });

@@ -23,8 +23,8 @@ let airlines;
 // set up oracles - check
 // register oracles - check
 // get indexes - check
-// register airline
-// fund airline
+// register airline - check? should already be registered
+// fund airline - check
 // register flight
 // is flight registered
 // change flight status
@@ -102,6 +102,7 @@ let airlines;
       console.log(e);
     }
   } //end for 
+    console.log('end of async');
 })(); // end async
 
 console.log('meow');

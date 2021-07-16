@@ -4,7 +4,7 @@ import Config from './config.json';
 import Web3 from 'web3';
 import express from 'express';
 import "babel-polyfill";
-
+import { Random } from "random-js";
 
 let config = Config['localhost'];
 let web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
@@ -14,6 +14,7 @@ let flightSuretyData = new web3.eth.Contract(FlightSuretyData.abi, config.dataAd
 let firstAirline;
 var oracles=[];
 let airlines;
+const random = new Random();
 
 //TODO: everything for server request.
 // spin up oracles, register, persist state in memory
@@ -25,26 +26,17 @@ let airlines;
 // get indexes - check
 // register airline - check? should already be registered
 // fund airline - check
-// register flight
-// is flight registered
-// change flight status
-// passenger buy?? guess no need to right now.
+// register flight - registered one flight
+// is flight registered - yes
+// change flight status - ?? not sure if this changed or not
 
 //submit oracle response
 //   by watching for oracle request... 
 
-
-//once registered...
-// need to 
-//ya TO. 
-// lets go over entire thing... just like oracles.js
-
-
-
 (async() => {
   let accounts = await web3.eth.getAccounts(); //ganache is 0-24 accounts
 
-  firstAirline = accounts[0];
+  firstAirline = accounts[0]; 
   
   // authorize app to call data contract
   try{
@@ -69,9 +61,7 @@ let airlines;
    console.log('oracleAccounts' + OracleAccounts);
 
 
-   //register airline
-    // just need to call fund for the first one and thats fine for now
-
+   //fund first airline
    try{
      await flightSuretyData.methods.fund(firstAirline).send({from: firstAirline, value: airlineFee});
      console.log('fund first airline');
@@ -102,25 +92,87 @@ let airlines;
       console.log(e);
     }
   } //end for 
-    console.log('end of async');
+    
+  //register flight
+  try{
+    await flightSuretyApp.methods.registerFlight(firstAirline, '010490', 631432800).send({from:firstAirline});
+    await flightSuretyApp.methods.registerFlight(firstAirline, '101191', 687157200).send({from:firstAirline});  
+  } catch(e) {
+    console.log(e);
+    console.log('could not register flight / already registered');
+  }
+
+  //check if flight is registered
+
+  try{
+    let result1 = await flightSuretyApp.methods.isFlightRegistered(firstAirline, '010490', 631432800).call({from:firstAirline}); //check if registerd
+    console.log('flight is registered? ---> ' + JSON.stringify(result1));
+  } catch(e) {
+    console.log(e);
+    console.log('flight is not registered / could not be checked');
+  }
+
+  // check flight status
+  let flightStatus = await flightSuretyApp.methods.viewFlightStatus(firstAirline, '010490', 631432800).call();
+  console.log('original flight status: ' + flightStatus);
+    
+  //change flight status to 20 - one that credits insurees.
+  try{
+    await flightSuretyApp.methods.changeFlightStatus(firstAirline, '010490', 631432800, 20).send({from: firstAirline});
+  } catch(e) {
+    console.log(e);
+    console.log('could not change flight status / already changed');
+  }
+
+  // check flight status
+  let flightStatus2 = await flightSuretyApp.methods.viewFlightStatus(firstAirline, '010490', 631432800).call();
+  console.log('Updated flight status: ' + flightStatus2);
+  
+  console.log('end of async');
 })(); // end async
 
 console.log('meow');
 
-const ORACLES_COUNT = 20;
-//for(let a=1; a<ORACLES_COUNT; a++) {      
-//  await config.flightSuretyApp.registerOracle({ from: accounts[a], value: fee }); //failing here. Not registering Oracle.
-//  let result = await config.flightSuretyApp.getMyIndexes.call({from: accounts[a]}); //Failing here.
-//  console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]}`);
-//}
+//this creates a random status, but I want the real one.
+function randomStatus(){
+  const random = new Random(); 
+    return (Math.ceil((random.integer(1, 50)) / 10) * 10); //looks through all possible iterations of flight statuses
+}
 
-
+//this is the big whammy watches for OracleRequest -> this is the combination / merge between the blockchain and our contracts
 
 flightSuretyApp.events.OracleRequest({
     fromBlock: 0
   }, function (error, event) {
-    if (error) console.log(error)
-    console.log(event)
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(event)
+
+      //all relevant code here for submitting oracle response
+      let randomStatusCode = 20;//randomStatus();
+      console.log(randomStatusCode);
+      let eventValue = event.returnValues; //returns event values for OracleRequest
+      console.log(eventValue);
+      console.log(`Catch a new event with random index: ${eventValue.index} for flight: ${eventValue.flight} and timestamp ${eventValue.timestamp}`);
+
+      //iterate through oracles
+      // whatever
+      oracles.forEach((oracle) => {
+        flightSuretyApp.methods.submitOracleResponse(
+          eventValue.index, eventValue.airline, eventValue.flight, eventValue.timestamp, randomStatusCode)
+          .send(
+            { from:oracle.address,
+              gas: 4712388,
+              gasPrice: 100000000000 
+          }).then(res => {
+            console.log(`--> Oracles(${oracle.address}) accepted with status code ${randomStatusCode}`)
+          }).catch(err => {
+            console.log(`--> Oracles(${oracle.address}) rejected with status code ${randomStatusCode}`)
+          });
+
+      }) 
+    }
 });
 
 

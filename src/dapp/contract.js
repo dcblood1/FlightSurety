@@ -41,7 +41,8 @@ export default class Contract {
             .call({ from: self.owner}, callback);
     }
 
-    // dont necessarily understand what is going on here....
+
+
     //airline: 0x0a3C0fd8Ab766C5e43f341Dd91C36f354f11FD71 flight: 010490, timestamp: 631432800
     fetchFlightStatus(flight, callback) {
         let self = this;
@@ -59,5 +60,35 @@ export default class Contract {
             });
     }
 
-    //
+    viewFlightStatus(flight, callback) {
+        let self = this;
+        self.flightSuretyApp.methods
+        .viewFlightStatus(self.airlines[0], flight, 631432800)
+        .call({from: self.owner}, callback);
+    }
+
+    /** 
+    //update flight code status
+    viewFlightStatus(flight, callback) {
+        let self = this;
+        let payload = {
+            airline: self.airlines[0],
+            flight: flight,
+            timestamp: 631432800
+        }
+
+        self.flightSuretyApp.methods
+            .viewFlightStatus(payload.airline, payload.flight, payload.timestamp)
+            .send({from: self.owner}, (error, result) => {
+                callback(error, payload);
+                console.log('viewFlighStatus result' + result);
+
+            });
+        console.log(payload);
+        console.log(result);
+        //how do I get the actual number back?    
+
+    }
+    */
+
 }

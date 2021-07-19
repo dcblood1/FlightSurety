@@ -111,7 +111,6 @@ contract('Oracles', async (accounts) => {
            //console.log('\nPost Flight Status:', idx, oracleIndexes[idx].toNumber(), flight, timestamp, flightStatus);
            
         }
-
       }
     }
 

@@ -24,7 +24,18 @@ import './flightsurety.css';
             contract.fetchFlightStatus(flight, (error, result) => {
                 display('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
             });
-        })
+            
+            contract.viewFlightStatus(flight, (error, result) => {
+                display('View Status', 'Check flight status boii', [{label: 'View Flight Status', error: error, value: result}]);
+                console.log('viewFlightStatus: ' + result);
+            });
+        });
+
+        
+        // find a way to grab the flight status info
+        // do that and I'll let you complete the project
+
+
     
     });
     

@@ -28,10 +28,9 @@ const random = new Random();
 // fund airline - check
 // register flight - registered one flight
 // is flight registered - yes
-// change flight status - ?? not sure if this changed or not
 
-//submit oracle response
-//   by watching for oracle request... 
+//submit oracle response - watch oracleResponse, get FlightStatusInfo
+// push FlightStatusInfo to frontend 
 
 (async() => {
   let accounts = await web3.eth.getAccounts(); //ganache is 0-24 accounts
@@ -126,38 +125,38 @@ const random = new Random();
 
   // check flight status
   let flightStatus2 = await flightSuretyApp.methods.viewFlightStatus(firstAirline, '010490', 631432800).call();
-  console.log('Updated flight status: ' + flightStatus2);
+  console.log('Updated flight status: ' + flightStatus2); //
   
   console.log('end of async');
 })(); // end async
 
-console.log('meow');
-
-//this creates a random status, but I want the real one.
+//this creates a random status, but I want the real one from the actual flight...
 function randomStatus(){
   const random = new Random(); 
     return (Math.ceil((random.integer(1, 50)) / 10) * 10); //looks through all possible iterations of flight statuses
 }
 
-//this is the big whammy watches for OracleRequest -> this is the combination / merge between the blockchain and our contracts
+
+// watch for OracelRequest event
+// If a request is made, Oracles would report back status codes that are ramdonly generated
+// event OracleRequest(index, airline, flight, timestamp)
+// function submitOracleResponse(uint8 index, address airline, string flight, uint256 timestamp, uint8 statusCode)
 
 flightSuretyApp.events.OracleRequest({
     fromBlock: 0
   }, function (error, event) {
     if (error) {
-      console.log(error);
+      //console.log(error);
     } else {
-      console.log(event)
+      //console.log('OracleRequest event: ' + event);
 
       //all relevant code here for submitting oracle response
-      let randomStatusCode = 20;//randomStatus();
-      console.log(randomStatusCode);
+      let randomStatusCode = randomStatus(); 
+      //console.log('randomStatusCode: ' + randomStatusCode);
       let eventValue = event.returnValues; //returns event values for OracleRequest
-      console.log(eventValue);
       console.log(`Catch a new event with random index: ${eventValue.index} for flight: ${eventValue.flight} and timestamp ${eventValue.timestamp}`);
 
       //iterate through oracles
-      // whatever
       oracles.forEach((oracle) => {
         flightSuretyApp.methods.submitOracleResponse(
           eventValue.index, eventValue.airline, eventValue.flight, eventValue.timestamp, randomStatusCode)
@@ -168,14 +167,45 @@ flightSuretyApp.events.OracleRequest({
           }).then(res => {
             console.log(`--> Oracles(${oracle.address}) accepted with status code ${randomStatusCode}`)
           }).catch(err => {
-            console.log(`--> Oracles(${oracle.address}) rejected with status code ${randomStatusCode}`)
+            //if index does not match
+            console.log(`--> Oracles(${oracle.address}) rejected with status code - index not match${randomStatusCode}`)
           });
 
-      }) 
+      })
+      
     }
 });
 
-
+// for flight status info
+flightSuretyApp.events.FlightStatusInfo({
+  fromBlock:0
+}, function(error, event) {
+  if (error) {
+    //console.log(error)
+  } else {
+    let eventValue = event.returnValues; 
+    console.log(`FlightStatus Info event: ${eventValue.airline} 
+                  for flight: ${eventValue.flight} 
+                  and timestamp ${eventValue.timestamp}
+                  and statusCode ${eventValue.status}`);
+  }
+}
+);
+// for flight status info
+flightSuretyApp.events.OracleReport({
+  fromBlock:0
+}, function(error, event) {
+  if (error) {
+    //console.log(error)
+  } else {
+    let eventValue = event.returnValues; 
+    console.log(`OracleReport event: ${eventValue.airline} 
+                  for flight: ${eventValue.flight} 
+                  and timestamp ${eventValue.timestamp}
+                  and statusCode ${eventValue.status}`);
+  }
+}
+);
 
 
 //not necessary, but if you wanted could build an API for a dropdown box for flights.
